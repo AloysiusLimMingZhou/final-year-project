@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" data-theme="sakura">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Heart Risk — Predict</title>
+  <link rel="stylesheet" href="/ui/assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <!-- ECG + Heart logo kept from previous version -->
+      <svg class="logo" viewBox="0 0 300 60" aria-hidden="true">
+        <defs><linearGradient id="grad1" x1="0" x2="1">
+          <stop offset="0%" stop-color="var(--accent-a)"/>
+          <stop offset="100%" stop-color="var(--accent-b)"/>
+        </linearGradient></defs>
+        <path d="M5 30 H40 l10 -10 l10 20 l12 -35 l10 50 l10 -25 h25" stroke="url(#grad1)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(170,10)">
+          <path d="M20 10 C20 5, 30 0, 35 8 C40 0, 50 5, 50 10 C50 20, 35 30, 35 30 C35 30, 20 20, 20 10 Z" fill="url(#grad1)" opacity="0.9"/>
+        </g>
+      </svg>
+      <div class="title">
+        <div class="app">Heart Risk Predictor</div>
+        <div class="tag">educational decision-support</div>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a href="./index.html">Predict</a>
+      <a href="./batch.html">Batch</a>
+      <a href="./admin.html">Admin</a>
+      <a href="/docs" target="_blank" class="ghost">API Docs</a>
+    </nav>
+    <div class="theme-switcher">
+      <label>Theme
+        <select id="theme-select">
+          <option value="sakura" selected>Sakura ❀</option>
+          <option value="clean">Clean Medical</option>
+          <option value="neon">Neon ECG</option>
+          <option value="pixel">Pixel Clinic</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Single Prediction</h2>
+      <p>Use simple values. Ranges like <strong>(0–1)</strong> are shown. Hover <span class="q-inline">?</span> for a short explanation.</p>
+
+      <div class="presets">
+        <button data-preset="low">Preset: Low Risk</button>
+        <button data-preset="medium">Preset: Medium Risk</button>
+        <button data-preset="high">Preset: High Risk</button>
+      </div>
+
+      <form id="predict-form">
+        <div class="grid">
+
+          <!-- Age -->
+          <label>
+            <span class="label-head">
+              Age <span class="q" title="Your age in full years. Used because heart risk tends to rise with age.">?</span>
+              <span class="hint">(years)</span>
+            </span>
+            <input type="number" name="age" min="0" max="120" step="1" placeholder="e.g., 54" required>
+          </label>
+
+          <!-- Sex (explicit radios) -->
+          <label>
+            <span class="label-head">
+              Sex <span class="q" title="Biological sex: Female and Male are coded as 0 or 1 so the model can use the value.">?</span>
+              <span class="hint">(choose one)</span>
+            </span>
+            <div class="options">
+              <label class="chip"><input type="radio" name="sex" value="0" required> Female (0)</label>
+              <label class="chip"><input type="radio" name="sex" value="1"> Male (1)</label>
+            </div>
+          </label>
+
+          <!-- Chest pain type as select -->
+          <label>
+            <span class="label-head">
+              Chest pain type <span class="q" title="Type of chest pain or symptoms. Typical/atypical angina relates to chest discomfort from reduced blood flow; 'non-anginal' means pain likely from another cause; 'asymptomatic' means no chest pain.">?</span>
+              <span class="hint">(pick one)</span>
+            </span>
+            <select name="cp" required>
+              <option value="" disabled selected>Choose chest pain type…</option>
+              <option value="0">0 — Typical angina (classic chest pressure)</option>
+              <option value="1">1 — Atypical angina (less typical symptoms)</option>
+              <option value="2">2 — Non-anginal pain (likely not from the heart)</option>
+              <option value="3">3 — Asymptomatic (no chest pain)</option>
+            </select>
+          </label>
+
+          <!-- Resting blood pressure -->
+          <label>
+            <span class="label-head">
+              Resting blood pressure <span class="q" title="Systolic blood pressure while resting, measured in the clinic. High values strain the heart over time.">?</span>
+              <span class="hint">(mm Hg)</span>
+            </span>
+            <input type="number" name="trestbps" min="60" max="250" step="1" placeholder="e.g., 140" required>
+          </label>
+
+          <!-- Cholesterol -->
+          <label>
+            <span class="label-head">
+              Cholesterol <span class="q" title="Total cholesterol in the blood. Higher values can increase risk of artery narrowing.">?</span>
+              <span class="hint">(mg/dL)</span>
+            </span>
+            <input type="number" name="chol" min="80" max="700" step="1" placeholder="e.g., 239" required>
+          </label>
+
+          <!-- Fasting blood sugar as radios -->
+          <label>
+            <span class="label-head">
+              Fasting blood sugar > 120 mg/dL <span class="q" title="If your fasting (no food for ~8 hours) blood sugar was above 120 mg/dL. This can be a sign of diabetes or pre-diabetes.">?</span>
+              <span class="hint">(0–1)</span>
+            </span>
+            <div class="options">
+              <label class="chip"><input type="radio" name="fbs" value="0" required> No (0)</label>
+              <label class="chip"><input type="radio" name="fbs" value="1"> Yes (1)</label>
+            </div>
+          </label>
+
+          <!-- Resting ECG as select -->
+          <label>
+            <span class="label-head">
+              ECG at rest <span class="q" title="Electrocardiogram result while resting. A tracing can be normal, show ST-T wave changes, or indicate left ventricular hypertrophy (thickened heart muscle).">?</span>
+              <span class="hint">(pick one)</span>
+            </span>
+            <select name="restecg" required>
+              <option value="" disabled selected>Choose ECG at rest…</option>
+              <option value="0">0 — Normal</option>
+              <option value="1">1 — ST-T wave abnormality</option>
+              <option value="2">2 — Left ventricular hypertrophy</option>
+            </select>
+          </label>
+
+          <!-- Max heart rate -->
+          <label>
+            <span class="label-head">
+              Max heart rate (during exercise) <span class="q" title="Highest heart rate reached during a stress test. Lower values for your age can indicate limited exercise capacity.">?</span>
+              <span class="hint">(bpm)</span>
+            </span>
+            <input type="number" name="thalach" min="60" max="250" step="1" placeholder="e.g., 160" required>
+          </label>
+
+          <!-- Exercise-induced angina as radios -->
+          <label>
+            <span class="label-head">
+              Chest pain during exercise <span class="q" title="Did you have chest pain or tightness during exercise testing?">?</span>
+              <span class="hint">(0–1)</span>
+            </span>
+            <div class="options">
+              <label class="chip"><input type="radio" name="exang" value="0" required> No (0)</label>
+              <label class="chip"><input type="radio" name="exang" value="1"> Yes (1)</label>
+            </div>
+          </label>
+
+          <!-- Oldpeak -->
+          <label>
+            <span class="label-head">
+              ST segment drop (“oldpeak”) <span class="q" title="How much the ST segment on the ECG drops during exercise compared with rest (in units). Bigger drops can suggest reduced blood flow to the heart.">?</span>
+              <span class="hint">(e.g., 0.0–6.0)</span>
+            </span>
+            <input type="number" name="oldpeak" min="0" max="10" step="0.1" placeholder="e.g., 1.2" required>
+          </label>
+
+          <!-- Slope as select -->
+          <label>
+            <span class="label-head">
+              Slope of ST segment at peak exercise <span class="q" title="The shape of the ST segment at peak exercise: upsloping, flat, or downsloping. Flat/downsloping can indicate strain on the heart.">?</span>
+              <span class="hint">(pick one)</span>
+            </span>
+            <select name="slope" required>
+              <option value="" disabled selected>Choose slope…</option>
+              <option value="0">0 — Upsloping</option>
+              <option value="1">1 — Flat</option>
+              <option value="2">2 — Downsloping</option>
+            </select>
+          </label>
+
+          <!-- CA -->
+          <label>
+            <span class="label-head">
+              Coronary vessels seen on imaging <span class="q" title="Number of major blood vessels (0–3) that were visible using a dye during imaging. A higher number means more vessels were clearly seen.">?</span>
+              <span class="hint">(0–3)</span>
+            </span>
+            <input type="number" name="ca" min="0" max="3" step="1" placeholder="0, 1, 2, or 3" required>
+          </label>
+
+          <!-- Thal as select -->
+          <label>
+            <span class="label-head">
+              Thalassemia test (thal) <span class="q" title="A nuclear medicine test category used in older datasets; the numbers are codes for how blood flow looked in the heart scan.">?</span>
+              <span class="hint">(pick one)</span>
+            </span>
+            <select name="thal" required>
+              <option value="" disabled selected>Choose thal category…</option>
+              <option value="0">0 — Normal</option>
+              <option value="1">1 — Fixed defect (scar)</option>
+              <option value="2">2 — Reversible defect (stress-induced)</option>
+              <option value="3">3 — Unknown/other (dataset code)</option>
+            </select>
+          </label>
+
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary">Predict</button>
+          <button type="reset" class="ghost">Reset</button>
+        </div>
+      </form>
+
+      <div class="result">
+        <div class="meter">
+          <div class="needle" id="needle"></div>
+          <div class="labels"><span>Low</span><span>Med</span><span>High</span></div>
+        </div>
+        <div id="pretty-output" class="pretty"></div>
+        <pre id="predict-output" class="output" hidden></pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="/ui/assets/js/theme.js"></script>
+  <script src="/ui/assets/js/app.js"></script>
+</body>
+</html>

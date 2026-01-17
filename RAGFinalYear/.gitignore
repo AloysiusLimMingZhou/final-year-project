@@ -1,0 +1,35 @@
+# Python and build stuff
+__pycache__/
+.venv/
+build/
+dist/
+.ipynb_checkpoints/
+.idea/
+./vscode/
+
+# ML Artifacts stuff
+*.pyc
+*.pyo
+*.pkl
+
+# DB stuff
+*.sqlite
+*.sqlite3
+vectorstore/
+data/
+
+# Very important stuff
+.env
+env/
+secrets.json
+
+# Logs
+*.log
+
+# Misc
+.lock
+meta.json
+
+# OS
+.DS_Store
+Thumbs.db

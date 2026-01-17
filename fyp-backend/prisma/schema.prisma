@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model blog_posts {
+  id                                  BigInt            @id @default(autoincrement())
+  user_id                             BigInt
+  title                               String
+  content                             String
+  status                              blog_posts_status @default(pending)
+  created_at                          DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at                          DateTime?         @default(now()) @db.Timestamptz(6)
+  reviewed_by                         BigInt?
+  reviewed_at                         DateTime?         @db.Timestamptz(6)
+  category                            blogs_category?   @default(General)
+  users_blog_posts_reviewed_byTousers users?            @relation("blog_posts_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_blog_posts_user_idTousers     users             @relation("blog_posts_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model doctors {
+  user_id                          BigInt               @id
+  specialization                   String               @db.VarChar(255)
+  years_of_experience              Int
+  doctor_license_url               String
+  status                           doctor_review_status @default(pending)
+  created_at                       DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at                       DateTime?            @default(now()) @db.Timestamptz(6)
+  reviewed_by                      BigInt?
+  reviewed_at                      DateTime?            @db.Timestamptz(6)
+  identification_number            String               @db.VarChar(100)
+  phone_number                     String               @db.VarChar(40)
+  graduated_from                   String               @db.VarChar(255)
+  place_of_practice                String               @db.VarChar(255)
+  type_of_registration             registration_type
+  users_doctors_reviewed_byTousers users?               @relation("doctors_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_doctors_user_idTousers     users                @relation("doctors_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model health {
+  id                BigInt             @id @default(autoincrement())
+  user_id           BigInt
+  age               Int
+  sex               Int
+  cp                Int
+  trestbps          Int
+  chol              Int
+  fbs               Int
+  restecg           Int
+  thalach           Int
+  exang             Int
+  oldpeak           Float              @db.Real
+  slope             Int
+  ca                Int
+  thal              Int
+  recorded_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  users             users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  health_prediction health_prediction?
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model health_prediction {
+  id            BigInt    @id @default(autoincrement())
+  health_id     BigInt    @unique(map: "health_prediction_health_id_unique")
+  model_version String    @db.VarChar(255)
+  risk_score    Float
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  band          String
+  health        health    @relation(fields: [health_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model roles {
+  id          BigInt        @id @default(autoincrement())
+  name        String        @unique @db.VarChar(255)
+  users_roles users_roles[]
+}
+
+model users {
+  id                                       BigInt          @id @default(autoincrement())
+  name                                     String          @db.VarChar(255)
+  email                                    String          @unique @db.VarChar(255)
+  hashed_password                          String          @db.VarChar(255)
+  created_at                               DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime?       @default(now()) @db.Timestamptz(6)
+  latitude                                 Float?
+  longitude                                Float?
+  age                                      Int?
+  sex                                      sex?
+  emergency_contact_email                  String?         @db.VarChar(255)
+  blog_posts_blog_posts_reviewed_byTousers blog_posts[]    @relation("blog_posts_reviewed_byTousers")
+  blog_posts_blog_posts_user_idTousers     blog_posts[]    @relation("blog_posts_user_idTousers")
+  chat_sessions                            chat_sessions[]
+  doctors_doctors_reviewed_byTousers       doctors[]       @relation("doctors_reviewed_byTousers")
+  doctors_doctors_user_idTousers           doctors?        @relation("doctors_user_idTousers")
+  health                                   health[]
+  users_roles                              users_roles[]
+}
+
+model users_roles {
+  user_id BigInt
+  role_id BigInt
+  roles   roles  @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users   users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, role_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model chat_messages {
+  chat_id       BigInt        @id @default(autoincrement())
+  session_id    BigInt
+  role          chat_role
+  content       String
+  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  citations     Json?
+  chat_sessions chat_sessions @relation(fields: [session_id], references: [session_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model chat_sessions {
+  session_id    BigInt          @id @default(autoincrement())
+  user_id       BigInt
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  chat_messages chat_messages[]
+  users         users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+enum blog_posts_status {
+  approved
+  rejected
+  pending
+}
+
+enum doctor_review_status {
+  approved
+  rejected
+  pending
+  revoked
+}
+
+enum chat_role {
+  user
+  assistant
+}
+
+enum blogs_category {
+  Heart
+  Lifestyle
+  Nutrition
+  Fitness
+  General
+}
+
+enum registration_type {
+  Full_Registration        @map("Full Registration")
+  Provisional_Registration @map("Provisional Registration")
+  TPC_Number               @map("TPC Number")
+}
+
+enum sex {
+  male
+  female
+}

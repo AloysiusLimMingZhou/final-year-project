@@ -1,0 +1,183 @@
+/* ===== Base + Theme Variables ===== */
+:root {
+  --bg: #f7f9fb;
+  --panel: #ffffff;
+  --text: #0c1420;
+  --muted: #6b7a90;
+  --line: rgba(12, 20, 32, 0.08);
+  --accent-a: #0ea5e9;
+  --accent-b: #22c55e;
+  --ring: rgba(14,165,233,.25);
+}
+
+html[data-theme="neon"] {
+  --bg: #0b0f14;
+  --panel: #0f1726;
+  --text: #e2f1ff;
+  --muted: #8da4c7;
+  --line: rgba(141,164,199,.2);
+  --accent-a: #00fff2;
+  --accent-b: #ff27a6;
+  --ring: rgba(255,39,166,.25);
+}
+
+html[data-theme="pixel"] {
+  --bg: #e6f0ff;
+  --panel: #fdfdfd;
+  --text: #1a1a1a;
+  --muted: #345;
+  --line: #222;
+  --accent-a: #2b6cb0;
+  --accent-b: #90cdf4;
+  --ring: rgba(0,0,0,.25);
+}
+
+html[data-theme="sakura"] {
+  --bg: #fff7f9;
+  --panel: #ffffff;
+  --text: #402b2f;
+  --muted: #a46a7b;
+  --line: rgba(164, 106, 123, .2);
+  --accent-a: #ff6b9e;
+  --accent-b: #ffd1e1;
+  --ring: rgba(255,107,158,.25);
+}
+
+/* ===== Layout ===== */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 100% -50%, var(--accent-b) 0%, transparent 60%), var(--bg);
+}
+
+.site-header {
+  position: sticky; top: 0; z-index: 10;
+  display: grid; grid-template-columns: 1fr auto auto;
+  gap: 16px; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+  background: color-mix(in oklab, var(--panel) 92%, var(--bg));
+  backdrop-filter: blur(6px);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo { width: 110px; height: 40px; filter: drop-shadow(0 0 4px color-mix(in oklab, var(--accent-a) 60%, transparent)); }
+.title .app { font-weight: 700; letter-spacing: .2px; }
+.title .tag { font-size: .8rem; color: var(--muted); }
+
+.topnav a { margin: 0 8px; text-decoration: none; color: var(--text); opacity: .85; }
+.topnav a:hover { opacity: 1; text-underline-offset: 4px; text-decoration: underline; }
+.topnav .ghost { opacity: .7; }
+
+.theme-switcher label { font-size: .9rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.theme-switcher select { padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); }
+
+main { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 30px -18px color-mix(in oklab, var(--accent-a) 30%, transparent);
+}
+h2 { margin: 0 0 12px; }
+p  { margin: 0 0 12px; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.flex-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
+@media (max-width: 800px) { .flex-2 { grid-template-columns: 1fr; } }
+
+label { display: flex; flex-direction: column; gap: 6px; font-size: .95rem; }
+input, select, button, a.ghost {
+  padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--line); outline: none; background: color-mix(in oklab, var(--panel) 85%, var(--bg));
+}
+input:focus, select:focus { box-shadow: 0 0 0 6px var(--ring); border-color: color-mix(in oklab, var(--accent-a) 40%, var(--line)); }
+
+button.primary {
+  background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+  color: #fff; border: 0; font-weight: 600;
+}
+button.ghost, a.ghost {
+  background: transparent; color: var(--text);
+}
+.actions { display: flex; gap: 8px; margin-top: 8px; }
+.output {
+  background: color-mix(in oklab, var(--bg) 70%, var(--panel));
+  border: 1px dashed var(--line);
+  border-radius: 12px; padding: 12px; min-height: 260px; overflow:auto;
+}
+ul { padding-left: 18px; }
+
+.plotbox { min-height: 260px; display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 12px; background: color-mix(in oklab, var(--bg) 70%, var(--panel)); }
+.plotbox img { max-width: 100%; height: auto; border-radius: 10px; }
+
+/* Theme extras */
+html[data-theme="neon"] body { background: radial-gradient(1200px 600px at 0% -40%, rgba(0,255,242,.25), transparent 60%), var(--bg); }
+html[data-theme="neon"] .card { box-shadow: 0 10px 40px -20px rgba(0,255,242,.4); }
+html[data-theme="neon"] .logo { filter: drop-shadow(0 0 6px rgba(0,255,242,.45)); }
+
+html[data-theme="pixel"] * { image-rendering: pixelated; }
+html[data-theme="pixel"] .card, html[data-theme="pixel"] input, html[data-theme="pixel"] select, html[data-theme="pixel"] button { border-radius: 4px; border: 2px solid #0003; box-shadow: 4px 4px 0 #0001; font-family: 'Courier New', ui-monospace, monospace; }
+
+html[data-theme="sakura"] body::before,
+html[data-theme="sakura"] body::after {
+  content: '❀ ❁ ✿ ❀ ❁ ✿';
+  position: fixed; top: -10%; left: 0; right: 0; text-align: center;
+  color: var(--accent-a); opacity: .12; font-size: 24px; pointer-events: none;
+  animation: fall 12s linear infinite;
+}
+html[data-theme="sakura"] body::after { animation-duration: 16s; opacity: .08; filter: blur(1px); }
+@keyframes fall { from { transform: translateY(-10%); } to { transform: translateY(120%); } }
+
+/* --- Radio "chip" group --- */
+.options { display:flex; gap:10px; flex-wrap:wrap; }
+.options .chip {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border:1px solid var(--line);
+  border-radius:999px;
+  background: color-mix(in oklab, var(--panel) 88%, var(--bg));
+  cursor: pointer;
+  user-select: none;
+}
+.options .chip input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-a);   /* keeps native radio, just looks nice */
+}
+
+/* Keep question text + ? + hint inline, input group below */
+form label { display:flex; flex-direction:column; gap:6px; }
+.label-head { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.label-head .hint { color: var(--muted); font-size:.85rem; }
+
+/* --- Risk meter --- */
+/* Green on RIGHT (Low ← red … yellow … green → High) */
+.meter {
+  position: relative;
+  height: 82px;
+  border-radius: 12px;
+  margin: 8px 0 12px;
+  background: conic-gradient(#fb7185 0 33%, #facc15 0 66%, #4ade80 0 100%);
+  opacity: .95;
+}
+.meter .labels {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 0 12px; font-weight:700; color:#111;
+  mix-blend-mode: overlay; text-shadow:0 1px 0 rgba(255,255,255,.6);
+}
+.meter .needle {
+  position:absolute; top:-10px; width:2px; height:102px;
+  background: color-mix(in oklab, var(--accent-a) 60%, #000);
+  left: 0%; transform: translateX(-1px);
+  transition:left .5s ease; box-shadow: 0 0 6px var(--accent-a);
+}
+
+/* A small helper so meter sits in a card-like block if you need it */
+.meter-wrap { background: color-mix(in oklab, var(--bg) 70%, var(--panel));
+  border:1px dashed var(--line); border-radius:12px; padding:12px; }

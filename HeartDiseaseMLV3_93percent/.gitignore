@@ -1,0 +1,40 @@
+# Python and build stuff
+__pycache__/
+ml/__pycache__/
+ml/tasks/heart_disease/__pycache__
+service/__pycache__
+.venv/
+build/
+dist/
+.ipynb_checkpoints/
+.idea/
+.vscode/
+
+# ML Artifacts stuff
+*.pyc
+*.pyo
+*.pkl
+*.joblib
+ml/tasks/heart_disease/*.json
+ml/tasks/heart_disease/*.csv
+ml/tasks/heart_disease/*.joblib
+ml/tasks/heart_disease/*.pkl
+
+# Data stuff
+*.csv
+data/
+*.sqlite
+*.sqlite3
+reports/
+test data/
+
+# Very important stuff
+.env
+env/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
