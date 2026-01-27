@@ -61,7 +61,7 @@ def main():
     chunks = text_splitters(documents) # Split the documents into chunks
     embeddings = HuggingFaceEmbeddings( # Setting up the embedding model to turn chunks from words into matrices that LLMs can understand
         model_name=EMBEDDING_MODEL,
-        model_kwargs={"device":"cuda"},
+        model_kwargs={"device":"cpu"},
         encode_kwargs={"normalize_embeddings": True},
     )
 

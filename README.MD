@@ -43,12 +43,14 @@ npm install
 3. ML model
 ```bash
 cd HeartDiseaseMLV3_93percent
+python -m venv .venv (To create a python virtual environment if loaded in the beginning)
 ./.venv/Scripts/activate
 pip install -r requirements.txt
 ```
 4. RAG model
 ```bash
 cd RAGFinalYear
+python -m venv .venv (To create a python virtual environment if loaded in the beginning)
 ./.venv/Scripts/activate
 pip install -r requirements.txt
 ```
@@ -63,7 +65,6 @@ npx prisma migrate dev
 npx prisma generate
 npx prisma db seed
 ```
-3. In the database,
 
 # Step 4: Run the application
 1. Run the frontend 
@@ -84,8 +85,7 @@ npm run start:dev (The server will run on http://localhost:3000)
 (3rd terminal: 
 ```bash
 cd HeartDiseaseMLV3_93percent
-python -m venv .venv
-./.venv/Scripts/activate
+./.venv/Scripts/activate (skip this if in virtual environment already)
 uvicorn service.api:app --reload --port 8002 (The server will run on http://localhost:8002)
 ```
 )
@@ -93,8 +93,9 @@ uvicorn service.api:app --reload --port 8002 (The server will run on http://loca
 (4th terminal: 
 ```bash
 cd RAGFinalYear
-python -m venv .venv
-./.venv/Scripts/activate
+./.venv/Scripts/activate (skip this if in virtual environment already)
+py generation.py (If you see ImportError: sys.meta_path is None, Python is likely shutting down, dont panic. This is because I didnt add main() inside the file. Thus the flag. It doesnt harm anything and it should run just fine)
+py RAGMedicalChatbot.py
 uvicorn server:app --reload --port 8001 (The server will run on http://localhost:8001)
 ```
 )
