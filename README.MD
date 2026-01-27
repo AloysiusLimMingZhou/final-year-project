@@ -60,6 +60,7 @@ pip install -r requirements.txt
 cd fyp-backend
 npm install
 npx prisma migrate dev
+npx prisma generate
 npx prisma db seed
 ```
 3. In the database,
@@ -83,6 +84,7 @@ npm run start:dev (The server will run on http://localhost:3000)
 (3rd terminal: 
 ```bash
 cd HeartDiseaseMLV3_93percent
+python -m venv .venv
 ./.venv/Scripts/activate
 uvicorn service.api:app --reload --port 8002 (The server will run on http://localhost:8002)
 ```
@@ -91,6 +93,7 @@ uvicorn service.api:app --reload --port 8002 (The server will run on http://loca
 (4th terminal: 
 ```bash
 cd RAGFinalYear
+python -m venv .venv
 ./.venv/Scripts/activate
 uvicorn server:app --reload --port 8001 (The server will run on http://localhost:8001)
 ```
