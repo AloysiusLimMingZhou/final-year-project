@@ -52,7 +52,13 @@ export class AuthService {
       where: { name: "user" }
     })
 
-    if (!memberRole) throw new InternalServerErrorException("Role \"user\" is not found in the database")
+    if (!memberRole) await this.prisma.roles.upsert({
+      where: { name: "user" },
+      update: {},
+      create: {
+        name: "user"
+      }
+    });
 
     const user: any = await this.prisma.users.create({
       data: {

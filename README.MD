@@ -84,7 +84,7 @@ npm run start:dev (The server will run on http://localhost:3000)
 ```bash
 cd HeartDiseaseMLV3_93percent
 ./.venv/Scripts/activate
-uvicorn service.api:app --reload --port 8001 (The server will run on http://localhost:8001)
+uvicorn service.api:app --reload --port 8002 (The server will run on http://localhost:8002)
 ```
 )
 4. Run the RAG models
@@ -92,7 +92,7 @@ uvicorn service.api:app --reload --port 8001 (The server will run on http://loca
 ```bash
 cd RAGFinalYear
 ./.venv/Scripts/activate
-uvicorn server:app --reload --port 8002 (The server will run on http://localhost:8002)
+uvicorn server:app --reload --port 8001 (The server will run on http://localhost:8001)
 ```
 )
 

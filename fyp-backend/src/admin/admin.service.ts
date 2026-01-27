@@ -145,7 +145,13 @@ export class AdminService {
             where: { name: "doctor" }
         })
 
-        if (!doctorRole) throw new NotFoundException('Doctor role not found!');
+        if (!doctorRole) await this.prisma.roles.upsert({
+            where: { name: "doctor" },
+            update: {},
+            create: {
+                name: "doctor"
+            }
+        });
 
         const existingRole = await this.prisma.users_roles.findUnique({
             where: {
