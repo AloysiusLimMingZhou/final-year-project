@@ -10,6 +10,8 @@ import { Response } from 'express';
 import { ConfigService } from '@nestjs/config'
 import { UsersService } from '../users/users.service';
 import { UserResponseDto } from '../users/dto/UserResponse.dto';
+import { EmailVerificationService } from 'src/email-verification/email-verification.service';
+import { VerifyOtpDto } from 'src/email-verification/dto/verify-otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +19,7 @@ export class AuthService {
     private configService: ConfigService,
     private jwtService: JwtService,
     private userService: UsersService,
+    private emailVerificationService: EmailVerificationService,
     private prisma: PrismaService
   ) { }
 
@@ -69,6 +72,7 @@ export class AuthService {
         longitude: null,
         age: registerDto.age,
         sex: registerDto.sex,
+        provider: "local",
         emergency_contact_email: registerDto.emergency_contact_email,
         users_roles: {
           create: {
@@ -79,8 +83,13 @@ export class AuthService {
         }
       }
     });
-    const payload = { sub: user.id, name: user.name };
+    const rawOTP = await this.emailVerificationService.generateOTP(user);
+    await this.emailVerificationService.sendUserVerificationEmail(registerDto.email, rawOTP);
 
+    if (registerDto.emergency_contact_email) {
+      const rawEmergencyOTP = await this.emailVerificationService.generateEmergencyOTP(user);
+      await this.emailVerificationService.sendEmergencyVerificationEmail(user, rawEmergencyOTP);
+    }
   }
 
   login(user, res: Response) {
@@ -142,6 +151,8 @@ export class AuthService {
         longitude: null,
         age: null,
         sex: null,
+        isverified: true,
+        provider: "google",
         emergency_contact_email: null,
         users_roles: {
           create: {
@@ -179,14 +190,26 @@ export class AuthService {
     return isValid;
   }
 
-  async changePassword(id: string, oldPassword: string, newPassword: string): Promise<void> {
-    const isValid: boolean = await this.verifyPassword(id, oldPassword);
-    if (!isValid) throw new UnauthorizedException('Invalid password! Please try again!');
+  async changePassword(id: string, sessionToken: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.users.findUnique({ where: { id: BigInt(id) } });
+    if (!user) throw new NotFoundException('User is not found!');
+
+    // Verify the password-change session token (set after OTP verification)
+    await this.emailVerificationService.verifyPasswordChangeSession(user.email, sessionToken);
 
     const hashed_password = await this.hash(newPassword, 10);
     await this.prisma.users.update({
       where: { id: BigInt(id) },
       data: { hashed_password: hashed_password }
     })
+  }
+
+  async requestPasswordChangeOTP(id: string): Promise<void> {
+    const user = await this.prisma.users.findUnique({ where: { id: BigInt(id) } });
+    if (!user) throw new NotFoundException('User is not found!');
+    if (user.provider !== 'local') throw new UnauthorizedException('Password change is only available for local accounts.');
+
+    const rawOTP = await this.emailVerificationService.generateOTP(user);
+    await this.emailVerificationService.sendPasswordChangeEmail(user.email, rawOTP);
   }
 }

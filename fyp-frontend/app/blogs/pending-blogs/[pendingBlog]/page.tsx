@@ -1,78 +1,129 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useAuth } from "../../../context/AuthContext"
-import { useRouter, useParams } from "next/navigation"
+import { useEffect, useState } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { useRouter, useParams } from "next/navigation";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { ChevronLeft, User, Clock, Tag, Pencil, Trash2 } from "lucide-react";
 
-export default function GetPendingBlogById() {
-    const { user, loading } = useAuth();
-    const [pendingPost, setPendingPost] = useState<any>(null);
+export default function PendingBlogDetail() {
+    const { user, loading: authLoading } = useAuth();
+    const [post, setPost] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [busy, setBusy] = useState(false);
     const router = useRouter();
-    const params = useParams<{
-        pendingBlog: string
-    }>();
+    const params = useParams<{ pendingBlog: string }>();
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        }
-    }, [loading, user, router])
+        if (!authLoading && !user) router.push("/login");
+    }, [authLoading, user, router]);
 
-    const fetchPendingPost = async () => {
+    const fetchPost = async () => {
         try {
-            const response = await fetch(`/api/posts/${params.pendingBlog}/pending-posts`);
+            setLoading(true);
+            const response = await fetch(`/api/posts/${params.pendingBlog}/pending-post`);
+            if (!response.ok) { router.push("/blogs/pending-blogs"); return; }
             const data = await response.json();
-            setPendingPost(data);
-        } catch (err) {
-            console.error(err);
+            setPost(data);
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        fetchPendingPost();
-    }, [params.pendingBlog]);
+        if (user?.roles?.includes("doctor") && params.pendingBlog) fetchPost();
+    }, [user, params.pendingBlog]);
 
-    if (loading) return <div>Loading...</div>
+    const deletePost = async () => {
+        if (!confirm(`Delete blog "${post?.title}"?\n\nThis cannot be undone.`)) return;
+        setBusy(true);
+        const res = await fetch(`/api/posts/${params.pendingBlog}`, { method: "DELETE" });
+        setBusy(false);
+        if (res.ok) router.push("/blogs/pending-blogs");
+        else alert(await res.text());
+    };
 
-    if (!user?.roles.includes('doctor')) {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen text-red-600">
-                <h1 className="text-4xl font-bold">403 Forbidden</h1>
-                <p className="text-xl">You are not authorized to view this page</p>
-                <button onClick={() => router.push('/dashboard')} className="bg-blue-500 text-white p-2 rounded">
-                    Go Home
-                </button>
-            </div>
-        )
+    if (authLoading || loading) {
+        return <div className="py-10 text-sm text-center" style={{ color: "var(--hc-muted)" }}>Loading…</div>;
     }
 
-    const truncateWords = (text: string, limit: number) => {
-        if (!text) return '';
-        const words = text.split(/\s+/);
-        if (words.length <= limit) return text;
+    if (!user?.roles?.includes("doctor")) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <h1 className="text-2xl font-bold text-red-500">403 Forbidden</h1>
+                <Button onClick={() => router.push("/dashboard")}>Go Home</Button>
+            </div>
+        );
+    }
 
-        return words.slice(0, limit).join(' ') + "...";
+    if (!post) {
+        return (
+            <div className="space-y-4">
+                <Button variant="secondary" onClick={() => router.push("/blogs/pending-blogs")} iconLeft={<ChevronLeft className="h-4 w-4" />}>
+                    My Pending Blogs
+                </Button>
+                <Card><p style={{ color: "var(--hc-muted)" }}>Post not found or not accessible.</p></Card>
+            </div>
+        );
     }
 
     return (
-        <div>
-            <h1>Title: {pendingPost?.title}</h1>
-            <p>Created By: {pendingPost?.author_name}</p>
-            <p>Created At: {pendingPost?.created_at}</p>
-            <p>Updated At: {pendingPost?.updated_at}</p>
-            <p>Category: {pendingPost?.category}</p>
-            {pendingPost?.reviewed_at &&
-                <p>Reviewed By: {pendingPost.reviewer_name} At: {pendingPost.reviewed_at}</p>
-            }
-            <p>{truncateWords(pendingPost.content, 150)}</p>
-            <button onClick={() => router.push('/blogs/pending-blogs')} className="bg-blue-500 text-white px-4 py-2 rounded">Back to Pending Blogs</button>
-            <div className="mt-8 flex gap-4">
-                <button onClick={() => router.push('/dashboard')} className="bg-blue-500 text-white px-4 py-2 rounded">Dashboard</button>
-                <button onClick={() => router.push('/profile')} className="bg-purple-500 text-white px-4 py-2 rounded">Profile</button>
-                <button onClick={() => router.push('/blogs')} className="bg-yellow-500 text-white px-4 py-2 rounded">Blogs</button>
-                <button onClick={async () => { await fetch('/api/auth/logout', { method: "POST" }); router.push('/login') }} className="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-            </div>
-        </div>
-    )
+        <div className="space-y-4">
+            <Button
+                variant="secondary"
+                onClick={() => router.push("/blogs/pending-blogs")}
+                iconLeft={<ChevronLeft className="h-4 w-4" />}
+            >
+                My Pending Blogs
+            </Button>
 
+            <Card title={post.title}>
+                {/* Meta */}
+                <div className="flex flex-wrap items-center gap-2 text-xs mb-4" style={{ color: "var(--hc-muted)" }}>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1" style={{ borderColor: "var(--hc-border)" }}>
+                        <Tag className="h-3.5 w-3.5" style={{ color: "var(--hc-accent)" }} />
+                        {post.category || "General"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1" style={{ borderColor: "var(--hc-border)" }}>
+                        <User className="h-3.5 w-3.5" style={{ color: "var(--hc-accent)" }} />
+                        {post.author_name || "Unknown"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1" style={{ borderColor: "var(--hc-border)" }}>
+                        <Clock className="h-3.5 w-3.5" style={{ color: "var(--hc-accent)" }} />
+                        {post.created_at ? new Date(post.created_at).toLocaleDateString() : "—"}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 bg-amber-50 border-amber-200 text-amber-600">
+                        <Clock className="h-3.5 w-3.5" /> Pending Admin Review
+                    </span>
+                </div>
+
+                {/* Content */}
+                <div
+                    className="rounded-2xl border p-4 text-sm leading-relaxed whitespace-pre-wrap"
+                    style={{ borderColor: "var(--hc-border)", background: "rgba(100,116,139,0.04)", color: "var(--hc-text)" }}
+                >
+                    {post.content}
+                </div>
+
+                {/* Actions */}
+                <div className="mt-5 pt-4 border-t flex flex-wrap gap-3" style={{ borderColor: "var(--hc-border)" }}>
+                    <Button
+                        onClick={() => router.push(`/blogs/edit/${post.id}`)}
+                        iconLeft={<Pencil className="h-4 w-4" />}
+                    >
+                        Edit Blog
+                    </Button>
+                    <button
+                        onClick={deletePost}
+                        disabled={busy}
+                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-red-500 text-white transition hover:bg-red-600 disabled:opacity-60"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        {busy ? "Deleting…" : "Delete Blog"}
+                    </button>
+                </div>
+            </Card>
+        </div>
+    );
 }

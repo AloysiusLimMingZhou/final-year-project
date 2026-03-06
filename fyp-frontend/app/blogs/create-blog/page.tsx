@@ -1,95 +1,151 @@
-"use client"
+"use client";
 
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { BookOpen, ChevronLeft } from "lucide-react";
 
 export default function CreateBlog() {
-    const { user, loading } = useAuth();
-    const [error, setError] = useState('');
-    const [categories, setCategories] = useState<any[]>([])
+    const { user, loading: authLoading } = useAuth();
+    const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [categories, setCategories] = useState<string[]>([]);
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login')
-        }
-    }, [loading, user, router])
+        if (!authLoading && !user) router.push("/login");
+    }, [authLoading, user, router]);
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch('/api/posts/category');
+            const response = await fetch("/api/posts/category");
             const data = await response.json();
-            setCategories(data);
-        } catch (err) {
-            console.error(err);
+            setCategories(Array.isArray(data) ? data : []);
+        } catch {
             setCategories(["Heart", "Lifestyle", "Nutrition", "Fitness", "General"]);
         }
-    }
+    };
 
-    useEffect(() => {
-        fetchCategories();
-    }, [])
+    useEffect(() => { fetchCategories(); }, []);
 
-    if (loading) return <div>Loading...</div>
+    if (authLoading) return <div className="py-10 text-sm text-center" style={{ color: "var(--hc-muted)" }}>Loading…</div>;
 
-    if (!user?.roles.includes('doctor')) {
+    if (!user?.roles?.includes("doctor")) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen text-red-600">
-                <h1 className="text-4xl font-bold">403 Forbidden</h1>
-                <p className="text-xl">You are not authorized to view this page</p>
-                <button onClick={() => router.push('/dashboard')} className="bg-blue-500 text-white p-2 rounded">
-                    Go Home
-                </button>
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <h1 className="text-2xl font-bold text-red-500">403 Forbidden</h1>
+                <p className="text-sm" style={{ color: "var(--hc-muted)" }}>Only doctors can create blog posts.</p>
+                <Button onClick={() => router.push("/dashboard")}>Go Home</Button>
             </div>
-        )
+        );
     }
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
+        setSubmitting(true);
         const formData = new FormData(e.currentTarget);
-        const title = formData.get('title') as string;
-        const content = formData.get('content') as string;
-        const category = formData.get('category') as string;
+        const title = formData.get("title") as string;
+        const content = formData.get("content") as string;
+        const category = formData.get("category") as string;
 
         try {
-            const response = await fetch('/api/posts/create-post', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title,
-                    content,
-                    category
-                })
-            })
-
+            const response = await fetch("/api/posts/create-post", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, content, category }),
+            });
             if (response.ok) {
-                router.push('/blogs')
+                router.push("/blogs/pending-blogs");
+            } else {
+                const errData = await response.json().catch(() => ({}));
+                setError(errData?.message || "Failed to create post");
             }
-        } catch (error) {
-            console.log(error)
-            setError("Failed to create post")
+        } catch {
+            setError("Failed to create post. Please try again.");
+        } finally {
+            setSubmitting(false);
         }
-    }
+    };
+
+    const inputCls = "w-full rounded-xl border px-3 py-2.5 text-sm bg-transparent transition focus:outline-none focus-visible:ring-2";
+    const inputStyle = { borderColor: "var(--hc-border)", color: "var(--hc-text)" };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 max-w-sm mx-auto">
-            <h1 className="text-2xl font-bold">Create Post</h1>
-            {error && <p className="text-red-500">{error}</p>}
-            <input className="border p-2 rounded" type="text" name="title" placeholder="Title" required />
-            <textarea className="border p-2 rounded" name="content" placeholder="Content" required />
-            <label>Category</label>
-            <select name="category" className="border p-2 rounded">
-                {categories.map((category: any) => (
-                    <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1).toLowerCase()}
-                    </option>
-                ))}
-            </select>
-            <button className="bg-blue-500 text-white p-2 rounded" type="submit">Submit</button>
-        </form>
-    )
+        <div className="space-y-4 max-w-2xl mx-auto">
+            <Button variant="secondary" onClick={() => router.push("/blogs")} iconLeft={<ChevronLeft className="h-4 w-4" />}>
+                Back to Blogs
+            </Button>
+
+            <Card
+                title="Create Blog Post"
+                headerRight={
+                    <div className="rounded-xl p-2" style={{ background: "rgba(59,130,246,0.1)" }}>
+                        <BookOpen className="h-4 w-4" style={{ color: "#3B82F6" }} />
+                    </div>
+                }
+            >
+                <p className="text-sm mb-5" style={{ color: "var(--hc-muted)" }}>
+                    Submit a new blog post for admin review. Once approved, it will be published for all users to read.
+                </p>
+
+                {error && (
+                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Title</label>
+                        <input
+                            className={inputCls}
+                            style={inputStyle}
+                            type="text"
+                            name="title"
+                            placeholder="Enter blog title…"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Category</label>
+                        <select
+                            name="category"
+                            className={inputCls}
+                            style={inputStyle}
+                        >
+                            {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Content</label>
+                        <textarea
+                            className={inputCls}
+                            style={{ ...inputStyle, minHeight: "200px", resize: "vertical" }}
+                            name="content"
+                            placeholder="Write your blog content here…"
+                            required
+                        />
+                    </div>
+
+                    <div className="pt-2 flex gap-3">
+                        <Button type="submit" disabled={submitting}>
+                            {submitting ? "Submitting…" : "Submit for Review"}
+                        </Button>
+                        <Button variant="secondary" onClick={() => router.push("/blogs")}>
+                            Cancel
+                        </Button>
+                    </div>
+                </form>
+            </Card>
+        </div>
+    );
 }

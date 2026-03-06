@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { blog_posts, blog_posts_status, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -82,13 +82,15 @@ export class PostsService {
     skip?: number,
     take?: number,
     search?: string;
+    category?: string;
   }): Promise<CreatePostDto[]> {
-    const { skip = 0, take = 10, search } = queries ?? {};
+    const { skip = 0, take = 10, search, category } = queries ?? {};
     const posts = await this.prisma.blog_posts.findMany({
       skip,
       take,
       where: {
         status: "approved",
+        ...(category ? { category: category as any } : {}),
         ...(search ? {
           OR: [
             { title: { contains: search, mode: 'insensitive' } },
@@ -147,15 +149,17 @@ export class PostsService {
       skip?: number,
       take?: number,
       search?: string;
+      category?: string;
     }
   ): Promise<CreatePostDto[]> {
-    const { skip = 0, take = 10, search } = queries ?? {};
+    const { skip = 0, take = 10, search, category } = queries ?? {};
     const posts: PostWithRelation[] = await this.prisma.blog_posts.findMany({
       skip,
       take,
       where: {
         status: "pending",
         user_id: BigInt(userId),
+        ...(category ? { category: category as any } : {}),
         ...(search ? {
           OR: [
             { title: { contains: search, mode: 'insensitive' } },
@@ -194,14 +198,16 @@ export class PostsService {
       skip?: number,
       take?: number,
       search?: string;
+      category?: string;
     }
   ): Promise<CreatePostDto[]> {
-    const { skip = 0, take = 10, search } = queries ?? {};
+    const { skip = 0, take = 10, search, category } = queries ?? {};
     const posts: PostWithRelation[] = await this.prisma.blog_posts.findMany({
       skip,
       take,
       where: {
         status: 'pending',
+        ...(category ? { category: category as any } : {}),
         ...(search ? {
           OR: [
             { title: { contains: search, mode: 'insensitive' } },
@@ -222,11 +228,11 @@ export class PostsService {
     return this.toCreatePostDto(post);
   }
 
-  async approvePostById(id: string): Promise<void> {
+  async approvePostById(id: string, adminId: string): Promise<void> {
     const post: PostWithRelation = await this.findOne({ id: BigInt(id) });
 
     if (post.status === 'approved') {
-      throw new Error("This post has already been approved!");
+      throw new ConflictException('This post has already been approved!');
     }
 
     await this.prisma.blog_posts.update({
@@ -234,16 +240,16 @@ export class PostsService {
       data: {
         status: 'approved',
         reviewed_at: new Date(),
-        reviewed_by: post.users_blog_posts_reviewed_byTousers?.id
+        reviewed_by: BigInt(adminId)
       }
     })
   }
 
-  async rejectPostById(id: string): Promise<void> {
+  async rejectPostById(id: string, adminId: string): Promise<void> {
     const post: PostWithRelation = await this.findOne({ id: BigInt(id) });
 
     if (post.status === 'rejected') {
-      throw new Error("This post has already been rejected!");
+      throw new ConflictException('This post has already been rejected!');
     }
 
     await this.prisma.blog_posts.update({
@@ -251,7 +257,7 @@ export class PostsService {
       data: {
         status: 'rejected',
         reviewed_at: new Date(),
-        reviewed_by: post.users_blog_posts_reviewed_byTousers?.id
+        reviewed_by: BigInt(adminId)
       }
     })
   }

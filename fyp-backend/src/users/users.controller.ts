@@ -8,6 +8,7 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
+import { ParseBigIntPipe } from 'src/common/parse-bigint.pipe';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/UpdateUser.dto';
 import { UserResponseDto } from './dto/UserResponse.dto';
@@ -20,6 +21,8 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { sex } from '@prisma/client';
 import { EmailService } from 'src/common/email.service';
 import { PdfService } from 'src/common/pdf.service';
+import { IsVerifiedGuard } from 'src/auth/guards/isverified.guard';
+import { EmailVerificationService } from 'src/email-verification/email-verification.service';
 
 @Controller('users')
 export class UsersController {
@@ -27,7 +30,8 @@ export class UsersController {
     private readonly userService: UsersService,
     private readonly authService: AuthService,
     private readonly emailService: EmailService,
-    private readonly pdfService: PdfService
+    private readonly pdfService: PdfService,
+    private readonly emailVerificationService: EmailVerificationService,
   ) { }
 
   @Get('sex-category')
@@ -35,19 +39,14 @@ export class UsersController {
     return Object.values(sex);
   }
 
+  // No IsVerifiedGuard — unverified users need to view their profile
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@CurrentUser() user) {
     return this.userService.getProfile(user.id.toString());
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async findOneById(@Param('id') id: string): Promise<UserResponseDto> {
-    return this.userService.findOneById(id);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('admin')
   @Get()
   async findMany(@Query() query: UserPaginationDto): Promise<UserResponseDto[]> {
@@ -56,56 +55,7 @@ export class UsersController {
     return this.userService.findMany({ skip, take: limit, search });
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Put('profile')
-  updateProfile(
-    @CurrentUser() user,
-    @Body() updateUserDto: UpdateUserDto
-  ): Promise<UserResponseDto> {
-    return this.userService.updateById(user.id.toString(), updateUserDto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete('profile')
-  deleteAccount(@CurrentUser() user): Promise<void> {
-    return this.userService.deleteById(user.id.toString());
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  deleteById(@Param('id') id: string): Promise<void> {
-    return this.userService.deleteById(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Put('location')
-  async updateLocation(@CurrentUser() user, @Body() userLocation: { latitude: number; longitude: number }): Promise<void> {
-    return this.userService.updateLocation(user.id.toString(), userLocation.latitude, userLocation.longitude);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Put('profile/change-password')
-  async changePassword(@CurrentUser() user, @Body() body: { oldPassword: string, newPassword: string }) {
-    return this.authService.changePassword(user.id.toString(), body.oldPassword, body.newPassword);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('send-emergency-contact-email')
-  async sendEmergencyContactEmail(
-    @CurrentUser() user
-  ) {
-    await this.emailService.sendEmergencyContactEmail(user.id.toString());
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('send-alert-email')
-  async sendAlertEmail(
-    @CurrentUser() user
-  ) {
-    await this.emailService.sendHighRiskAlertEmail(user.id.toString());
-  }
-
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
   @Get('diagnosis/download')
   async downloadDiagnosisPDF(@CurrentUser() user, @Res() res) {
     const buffer: any = await this.pdfService.generateDiagnosisPDF(user.id.toString());
@@ -116,4 +66,74 @@ export class UsersController {
     })
     res.send(buffer);
   }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Get(':id')
+  async findOneById(@Param('id', ParseBigIntPipe) id: bigint): Promise<UserResponseDto> {
+    return this.userService.findOneById(id.toString());
+  }
+
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Put('profile')
+  updateProfile(
+    @CurrentUser() user,
+    @Body() updateUserDto: UpdateUserDto
+  ): Promise<UserResponseDto> {
+    return this.userService.updateById(user.id.toString(), updateUserDto);
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Delete('profile')
+  deleteAccount(@CurrentUser() user): Promise<void> {
+    return this.userService.deleteById(user.id.toString());
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Delete(':id')
+  deleteById(@Param('id', ParseBigIntPipe) id: bigint): Promise<void> {
+    return this.userService.deleteById(id.toString());
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Put('location')
+  async updateLocation(@CurrentUser() user, @Body() userLocation: { latitude: number; longitude: number }): Promise<void> {
+    return this.userService.updateLocation(user.id.toString(), userLocation.latitude, userLocation.longitude);
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Put('profile/change-password')
+  async changePassword(@CurrentUser() user, @Body() body: { sessionToken: string, newPassword: string }) {
+    return this.authService.changePassword(user.id.toString(), body.sessionToken, body.newPassword);
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Post('resend-emergency-verification')
+  async resendEmergencyVerification(@CurrentUser() user) {
+    const fullUser = await this.emailVerificationService.findUserByEmail(user.email);
+    if (!fullUser.emergency_contact_email) {
+      return { message: 'No emergency contact email found.' };
+    }
+    const otp = await this.emailVerificationService.generateEmergencyOTP(fullUser);
+    await this.emailVerificationService.sendEmergencyVerificationEmail(fullUser, otp);
+    return { message: 'Verification email sent to emergency contact.' };
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Post('send-emergency-contact-email')
+  async sendEmergencyContactEmail(
+    @CurrentUser() user
+  ) {
+    await this.emailService.sendEmergencyContactEmail(user.id.toString());
+  }
+
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  @Post('send-alert-email')
+  async sendAlertEmail(
+    @CurrentUser() user
+  ) {
+    await this.emailService.sendHighRiskAlertEmail(user.id.toString());
+  }
+
+
 }

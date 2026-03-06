@@ -14,6 +14,8 @@ from sklearn.metrics import (
     brier_score_loss,
     confusion_matrix,
     f1_score,
+    recall_score,
+    precision_score,
     roc_auc_score,
 )
 from sklearn.model_selection import train_test_split
@@ -37,13 +39,10 @@ def choose_dataset(root: Path, cli_data: str | None) -> Path:
 
     # default: cleveland.csv if present
     cleveland = root / "data" / "cleveland.csv"
-    merged = root / "data" / "heart4_merged.csv"
-    if merged.exists():
-        return merged
     if cleveland.exists():
         return cleveland
 
-    raise FileNotFoundError("No dataset found in ./data (expected cleveland.csv or heart4_merged.csv)")
+    raise FileNotFoundError("No dataset found in ./data (expected cleveland.csv)")
 
 
 def load_dataframe(path: Path) -> pd.DataFrame:
@@ -109,6 +108,8 @@ def evaluate(probs, preds, yte):
         "roc_auc": float(roc_auc_score(yte, probs)),
         "accuracy@0.5": float(accuracy_score(yte, preds)),
         "f1@0.5": float(f1_score(yte, preds)),
+        "recall@0.5": float(recall_score(yte, preds)),
+        "precision@0.5": float(precision_score(yte, preds)),
         "brier": float(brier_score_loss(yte, probs)),
     }
     tn, fp, fn, tp = confusion_matrix(yte, preds).ravel()
@@ -157,8 +158,13 @@ def main():
     m = evaluate(probs, preds, yte)
 
     suffix = args.artifact_suffix.strip()
-    base_name = f"artifact_v1{suffix}.pkl" if suffix else "artifact_v1.pkl"
-    metrics_name = f"metrics_v1{suffix}.json" if suffix else "metrics_v1.json"
+    if suffix:
+        base_name = f"artifact_v1{suffix}.pkl"
+        metrics_name = f"metrics_v1{suffix}.json"
+    else:
+        dataset_name = data_path.stem.replace("heart_", "")
+        base_name = f"artifact_v1_{dataset_name}.pkl"
+        metrics_name = f"metrics_v1_{dataset_name}.json"
 
     ARTIFACT = THIS.with_name(base_name)
     METRICS = THIS.with_name(metrics_name)
@@ -182,6 +188,11 @@ def main():
     }
 
     save_artifacts(ARTIFACT, METRICS, artifact, artifact["metrics"])
+    
+    # Save a generic metrics.json
+    generic_metrics_path = THIS.with_name("metrics.json")
+    generic_metrics_path.write_text(json.dumps(artifact["metrics"], indent=2))
+    
     print("✅ Model training complete")
     print("📦 Saved artifact:", ARTIFACT)
     print("📊 Metrics:", json.dumps(artifact["metrics"], indent=2))

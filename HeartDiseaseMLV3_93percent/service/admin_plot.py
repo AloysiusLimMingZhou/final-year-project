@@ -18,14 +18,31 @@ def compare_models_plot(
 ):
     rows = load_all_metrics(task)
 
+    def _extract_metric(r, m):
+        if m in r:
+            return float(r.get(m, 0.0))
+        if f"{m}@0.5" in r:
+            return float(r.get(f"{m}@0.5", 0.0))
+        
+        conf = r.get("confusion@0.5", {})
+        tp = conf.get("tp", 0)
+        fp = conf.get("fp", 0)
+        fn = conf.get("fn", 0)
+        if m == "precision":
+            return float(tp / (tp + fp)) if tp + fp > 0 else 0.0
+        if m == "recall":
+            return float(tp / (tp + fn)) if tp + fn > 0 else 0.0
+            
+        return 0.0
+
     # numeric values for the selected metric
     try:
-        rows.sort(key=lambda r: float(r.get(metric, 0.0)), reverse=True)
+        rows.sort(key=lambda r: _extract_metric(r, metric), reverse=True)
     except Exception:
         pass
 
     labels = [r.get("label", "?") for r in rows]
-    values = [float(r.get(metric, 0.0)) for r in rows]
+    values = [_extract_metric(r, metric) for r in rows]
 
     # figure size in inches (dpi=96 makes px≈inch*96)
     dpi = 96

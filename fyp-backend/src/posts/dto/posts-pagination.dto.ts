@@ -13,4 +13,8 @@ export class PostsPaginationDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
 }

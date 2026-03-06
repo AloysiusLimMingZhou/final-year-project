@@ -23,6 +23,9 @@ export class UsersService {
       age: user.age,
       sex: user.sex,
       emergency_contact_email: user.emergency_contact_email,
+      provider: user.provider,
+      isverified: user.isverified ?? false,
+      emergency_contact_isverified: user.emergency_contact_isverified ?? false,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -94,7 +97,17 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User is not found!');
 
-    const { specialization, graduated_from, place_of_practice, type_of_registration, years_of_experience, identification_number, phone_number, ...updateUserData } = updateUserDto;
+    const { specialization, graduated_from, place_of_practice, type_of_registration, years_of_experience, identification_number, phone_number, provider, isverified, emergency_contact_isverified, ...updateUserData } = updateUserDto;
+
+    // If emergency contact email changed, reset its verification
+    if (
+      updateUserData.emergency_contact_email !== undefined &&
+      updateUserData.emergency_contact_email !== user.emergency_contact_email
+    ) {
+      (updateUserData as any).emergency_contact_isverified = false;
+      (updateUserData as any).emergency_contact_token = null;
+      (updateUserData as any).emergency_contact_token_expires_at = null;
+    }
 
     const updatedUser = await this.prisma.users.update({
       where: { id: BigInt(id) },

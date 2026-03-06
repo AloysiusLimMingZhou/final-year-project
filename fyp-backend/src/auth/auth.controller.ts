@@ -9,6 +9,7 @@ import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
 import { CurrentUser } from './decorators/user.decarator';
 import { UserResponseDto } from '../users/dto/UserResponse.dto';
+import { IsVerifiedGuard } from './guards/isverified.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -42,6 +43,7 @@ export class AuthController {
     return res.redirect('http://localhost:3000/dashboard');
   }
 
+  // No IsVerifiedGuard — unverified users need to view their profile
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@CurrentUser() user) {
@@ -49,7 +51,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response): Promise<void> {
     return this.authService.logout(res);
@@ -63,19 +65,26 @@ export class AuthController {
     return this.authService.login(user, res);
   }
 
-  @Public()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
   @Post('verify-password')
   async verifyOldPassword(@CurrentUser() user, @Body() body: { password: string }) {
     return this.authService.verifyPassword(user.id.toString(), body.password);
   }
 
-  @Public()
+  // Request OTP for password change (sends email)
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @Post('request-password-change')
+  async requestPasswordChange(@CurrentUser() user) {
+    return this.authService.requestPasswordChangeOTP(user.id.toString());
+  }
+
+  // Change password with OTP verification
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @Put('change-password')
-  async changePassword(@CurrentUser() user, @Body() body: { oldPassword: string, newPassword: string }) {
-    return this.authService.changePassword(user.id.toString(), body.oldPassword, body.newPassword);
+  async changePassword(@CurrentUser() user, @Body() body: { sessionToken: string, newPassword: string }) {
+    return this.authService.changePassword(user.id.toString(), body.sessionToken, body.newPassword);
   }
 }

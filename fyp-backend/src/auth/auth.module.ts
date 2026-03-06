@@ -8,6 +8,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { EmailVerificationService } from 'src/email-verification/email-verification.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
       global: true,
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
-    })
+    }),
   ],
   providers: [
     AuthService,
@@ -24,8 +25,9 @@ import { GoogleStrategy } from './strategies/google.strategy';
     JwtStrategy,
     JwtRefreshStrategy,
     GoogleStrategy,
+    EmailVerificationService
   ],
   controllers: [AuthController],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

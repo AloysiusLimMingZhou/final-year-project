@@ -1,139 +1,246 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useRouter } from "next/navigation";
+import React from "react";
+import { Card, Button, cx } from "../components/ui-kit";
+import { SendHorizonal, Sparkles, Bot, User, Link as LinkIcon } from "lucide-react";
 
-interface Message {
-    role: "user" | "assistant";
-    content: string;
-    citations?: string[];
+type Msg = { role: "user" | "bot"; text: string; citation?: string[] };
+
+const SUGGESTIONS = [
+  "How can I reduce cholesterol safely?",
+];
+
+// Map UI messages -> FastAPI schema
+function toApiHistory(msgs: Msg[]) {
+  // FastAPI expects: history: [{ role, content }]
+  return msgs.map((m) => ({
+    role: m.role === "bot" ? "assistant" : "user",
+    content: m.text,
+  }));
 }
 
-export default function Chat() {
-    const router = useRouter();
-    const { user, loading } = useAuth();
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState("");
-    const [sending, setSending] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+export default function ChatPage() {
+  const [msgs, setMsgs] = React.useState<Msg[]>([
+    { role: "bot", text: "Hi! I’m your HealthConnect assistant. Ask me about your results or next steps ✨" },
+  ]);
+  const [draft, setDraft] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [status, setStatus] = React.useState<"Ready" | "Online" | "Offline">("Ready");
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null);
 
-    useEffect(() => {
-        if (user) {
-            fetch('/api/chat/history')
-                .then(res => {
-                    if (res.ok) return res.json();
-                    return [];
-                })
-                .then(data => {
-                    setMessages(data);
-                })
-                .catch(err => console.log("No history or failed fetch", err));
+  React.useEffect(() => {
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/chat/history");
+        if (res.ok) {
+          const rawMsgs = await res.json();
+          if (Array.isArray(rawMsgs) && rawMsgs.length > 0) {
+            const histMsgs = rawMsgs.map((m: any) => ({
+              role: m.role === "assistant" ? "bot" : m.role,
+              text: m.content,
+              citation: m.citations || [],
+            })) as Msg[];
+            setMsgs(histMsgs);
+          }
         }
-    }, [user]);
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+      }
+    }
+    loadHistory();
+  }, []);
 
-    useEffect(scrollToBottom, [messages]);
+  React.useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [msgs, loading]);
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        };
-    }, [loading, user, router])
+  async function send(text?: string) {
+    const content = (text ?? draft).trim();
+    if (!content || loading) return;
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || sending) return;
+    setDraft("");
+    setLoading(true);
 
-        const question = input;
-        setInput("");
-        setSending(true);
+    const nextMsgs = [...msgs, { role: "user" as const, text: content }];
+    setMsgs(nextMsgs);
 
-        const newMsgs = [...messages, { role: "user" as const, content: question }];
-        setMessages(newMsgs);
+    try {
+      const payload = {
+        question: content,
+      };
 
+      const res = await fetch("/api/chat/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        let errText = await res.text();
         try {
-            const response = await fetch("/api/chat/ask", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setMessages([...newMsgs, {
-                    role: "assistant",
-                    content: data.answer,
-                    citations: data.citation
-                }]);
-            } else {
-                const errMsg = data.message || "You have reached the limit of the chat session. Please try again 6 hours later!"
-                setMessages([...newMsgs, { role: "assistant", content: errMsg }]);
-            }
-        } catch (err) {
-            setMessages([...newMsgs, { role: "assistant", content: "System: Network Error! Please try again later!" }]);
-        } finally {
-            setSending(false);
+          const parsed = JSON.parse(errText);
+          errText = parsed.message || parsed.error || errText;
+        } catch {
+          // ignore parsing error
         }
-    };
+        throw new Error(errText);
+      }
 
-    return (
-        <div className="flex flex-col h-screen max-h-[80vh] p-4 max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold mb-4 border-b pb-2">Medical Assistant Chatbot</h1>
+      const data = (await res.json()) as { answer?: string; citation?: string[]; reply?: string; message?: string };
 
-            <div className="flex-1 overflow-y-auto mb-4 bg-gray-50 rounded p-4 border space-y-4">
-                {messages.length === 0 && <p className="text-gray-500 text-center">Ask me anything about heart health.</p>}
+      const reply = (data.answer ?? data.reply ?? data.message ?? "").toString().trim() || "(No response)";
+      const citation = Array.isArray(data.citation) ? data.citation : [];
 
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                        <div className={`max-w-[80%] p-3 rounded-lg ${msg.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-br-none'
-                            : 'bg-white border text-gray-800 rounded-bl-none shadow-sm'
-                            }`}>
-                            <p className="whitespace-pre-wrap max-w-[80%]">{msg.content}</p>
-                            {msg.citations && msg.citations.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500 max-w-[80%]">
-                                    <strong>Sources:</strong>
-                                    <ul className="list-disc pl-4">
-                                        {msg.citations.map((cite, i) => (
-                                            <li key={i}>{cite}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
+      setMsgs((m) => [...m, { role: "bot", text: reply, citation }]);
+      setStatus("Online");
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      setMsgs((m) => [
+        ...m,
+        {
+          role: "bot",
+          text:
+            "Sorry — I couldn’t reach the assistant service.\n\n" +
+            msg.replace(/\s+/g, " ").slice(0, 500),
+        },
+      ]);
+      setStatus("Offline");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-            <form onSubmit={handleSend} className="flex gap-2">
-                <input
-                    className="flex-1 border p-3 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Type your health question..."
-                    disabled={sending}
-                />
-                <button
-                    type="submit"
-                    disabled={sending}
-                    className="bg-blue-600 text-white px-6 py-3 rounded font-semibold disabled:bg-gray-400 hover:bg-blue-700 transition"
-                >
-                    {sending ? "..." : "Send"}
-                </button>
-            </form>
+  const statusLabel = status === "Online" ? "Connected" : status === "Offline" ? "Offline" : "Ready";
+  const statusTone = status === "Online" ? "var(--accent)" : status === "Offline" ? "#ef4444" : "var(--muted)";
 
-            <div className="mt-8 flex gap-4">
-                <button onClick={() => router.push('/dashboard')} className="bg-blue-500 text-white px-4 py-2 rounded">Dashboard</button>
-                <button onClick={() => router.push('/profile')} className="bg-purple-500 text-white px-4 py-2 rounded">Profile</button>
-                <button onClick={() => router.push('/blogs')} className="bg-yellow-500 text-white px-4 py-2 rounded">Blogs</button>
-                <button onClick={async () => { await fetch('/api/auth/logout', { method: "POST" }); router.push('/login') }} className="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
-            </div>
+  return (
+    <div className="space-y-4">
+      <Card
+        title="Assistant"
+        headerRight={
+          <span
+            className="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full border"
+            style={{ borderColor: "var(--borderSoft)", color: statusTone }}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {statusLabel}
+          </span>
+        }
+      >
+        {/* Suggestions */}
+        <div className="flex flex-wrap gap-2">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              onClick={() => send(s)}
+              className="rounded-full px-3 py-1.5 text-xs font-semibold border transition hover:opacity-90"
+              style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
+            >
+              {s}
+            </button>
+          ))}
         </div>
-    );
+
+        {/* Chat window */}
+        <div
+          ref={scrollerRef}
+          className="mt-4 overflow-auto rounded-2xl border p-3 space-y-2"
+          style={{
+            borderColor: "var(--borderSoft)",
+            background: "rgba(100,116,139,0.04)",
+            height: "calc(100vh - 290px)",
+            minHeight: 420,
+          }}
+        >
+          {msgs.map((m, i) => (
+            <div key={i} className={cx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+              <div className="flex items-end gap-2 max-w-[88%]">
+                {m.role === "bot" ? (
+                  <div
+                    className="h-8 w-8 rounded-xl border grid place-items-center"
+                    style={{ borderColor: "var(--borderSoft)", background: "var(--surface)" }}
+                  >
+                    <Bot className="h-4 w-4" style={{ color: "var(--accent)" }} />
+                  </div>
+                ) : null}
+
+                <div className="space-y-2">
+                  <div
+                    className="rounded-2xl px-3 py-2 text-sm border whitespace-pre-wrap"
+                    style={{
+                      borderColor: "var(--borderSoft)",
+                      background: m.role === "user" ? "var(--accent)" : "var(--surface)",
+                      color: m.role === "user" ? "#fff" : "var(--text)",
+                    }}
+                  >
+                    {m.text}
+                  </div>
+
+                  {m.role === "bot" && m.citation && m.citation.length > 0 ? (
+                    <details
+                      className="rounded-2xl border px-3 py-2 text-xs"
+                      style={{ borderColor: "var(--borderSoft)", background: "rgba(100,116,139,0.04)" }}
+                    >
+                      <summary className="cursor-pointer select-none inline-flex items-center gap-2">
+                        <LinkIcon className="h-3.5 w-3.5" style={{ color: "var(--muted)" }} />
+                        Sources ({m.citation.length})
+                      </summary>
+
+                      <ul className="mt-2 space-y-1 list-disc pl-4" style={{ color: "var(--muted)" }}>
+                        {m.citation.map((c, idx) => (
+                          <li key={idx} className="break-words">
+                            {c}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
+                </div>
+
+                {m.role === "user" ? (
+                  <div
+                    className="h-8 w-8 rounded-xl border grid place-items-center"
+                    style={{ borderColor: "var(--borderSoft)", background: "var(--surface)" }}
+                  >
+                    <User className="h-4 w-4" style={{ color: "var(--muted)" }} />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
+
+          {loading ? (
+            <div className="flex justify-start">
+              <div
+                className="rounded-2xl px-3 py-2 text-sm border"
+                style={{ borderColor: "var(--borderSoft)", background: "var(--surface)", color: "var(--muted)" }}
+              >
+                Typing…
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Input */}
+        <div className="mt-3 flex gap-2">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") send();
+            }}
+            placeholder="Ask about your risk, lifestyle, or results…"
+            className="w-full rounded-xl border bg-transparent px-3 py-2"
+            style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
+          />
+          <Button onClick={() => send()} iconRight={<SendHorizonal className="h-4 w-4" />}>
+            Send
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
 }

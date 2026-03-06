@@ -11,6 +11,7 @@ import { DoctorsModule } from './doctors/doctors.module';
 import { AdminModule } from './admin/admin.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { UsersModule } from './users/users.module';
+import { EmailVerificationModule } from './email-verification/email-verification.module';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { UsersModule } from './users/users.module';
     ChatModule,
     DoctorsModule,
     AdminModule,
-    UsersModule
+    UsersModule,
+    EmailVerificationModule
   ],
   controllers: [AppController],
   providers: [AppService],

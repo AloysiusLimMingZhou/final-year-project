@@ -10,13 +10,15 @@ BigInt.prototype.toJSON = function () {
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap(): Promise<void> {
   const app: INestApplication = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } }));
-  app.use(cookieParser())
+  app.use(cookieParser());
+  app.use(helmet());
   app.enableCors({
     origin: ['http://127.0.0.1:3000', 'http://localhost:3000'],
     credentials: true,

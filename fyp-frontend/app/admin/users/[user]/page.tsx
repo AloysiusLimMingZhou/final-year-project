@@ -1,97 +1,154 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useAuth } from '../../../context/AuthContext'
-import { useRouter, useParams } from "next/navigation"
+import { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import { useRouter, useParams } from "next/navigation";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { ChevronLeft, Trash2, User, Mail, Calendar, Clock, Shield } from "lucide-react";
 
-export default function UserProfile() {
-    const [User, setUser] = useState<any>(null);
-    const { user, loading } = useAuth();
+export default function UserDetailPage() {
+    const [profile, setProfile] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [busy, setBusy] = useState(false);
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const params = useParams<{ user: string }>();
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        }
-    }, [loading, user, router])
+        if (!authLoading && !user) router.push("/login");
+    }, [authLoading, user, router]);
 
     const fetchUser = async () => {
         try {
+            setLoading(true);
             const response = await fetch(`/api/users/${params.user}`);
-            if (!response.ok) {
-                router.push('/admin/users');
-            }
+            if (!response.ok) { router.push("/admin/users"); return; }
             const data = await response.json();
-            setUser(data);
+            setProfile(data);
         } catch (err) {
-            console.log(err);
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
-    }
-
-    const calculateAccountAge = () => {
-        if (User) {
-            const now = new Date();
-            const created_at = new Date(User.created_at);
-            const diffInMs = now.getTime() - created_at.getTime();
-            const accountAge = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-            return accountAge;
-        }
-    }
+    };
 
     useEffect(() => {
-        if (user?.roles.includes('admin')) {
-            fetchUser();
+        if (user?.roles?.includes("admin") && params.user) fetchUser();
+    }, [user, params.user]);
+
+    const calculateAccountAge = () => {
+        if (!profile) return null;
+        const now = new Date();
+        const created = new Date(profile.created_at);
+        return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+    };
+
+    const handleDelete = async () => {
+        if (!confirm(`Delete user "${profile?.name}"?\n\nThis cannot be undone.`)) return;
+        try {
+            setBusy(true);
+            const res = await fetch(`/api/users/${params.user}`, { method: "DELETE" });
+            if (res.ok) router.push("/admin/users");
+            else alert(await res.text());
+        } catch {
+            alert("Failed to delete user.");
+        } finally {
+            setBusy(false);
         }
-    }, [user]);
+    };
 
-    if (loading) return <div>Loading...</div>
-
-    if (!user?.roles.includes("admin")) {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen text-red-600">
-                <h1 className="text-4xl font-bold">403 Forbidden</h1>
-                <p className="text-xl">You are not authorized to view this page</p>
-                <button onClick={() => router.push('/dashboard')} className="bg-blue-500 text-white p-2 rounded">
-                    Go Home
-                </button>
-            </div>
-        )
+    if (authLoading || loading) {
+        return <div className="py-10 text-sm text-center" style={{ color: "var(--hc-muted)" }}>Loading…</div>;
     }
 
-    return (
-        <div>
-            {User &&
-                <div>
-                    <h1>User Profile</h1>
-                    <p>Name: {User.name}</p>
-                    <p>Email: {User.email}</p>
-                    <p>Age: {User.age}</p>
-                    <p>Sex: {User.sex}</p>
-                    <p>Emergency Contact Email: {User.emergency_contact_email}</p>
-                    <p>Account Age: {calculateAccountAge()} Days</p>
-                </div>
-            }
-            <button onClick={() => router.push('/admin/users')} className="bg-blue-500 text-white p-2 rounded">
-                Back
-            </button>
-            <button onClick={async () => {
-                const response = await fetch(`/api/users/${params.user}`, {
-                    method: 'DELETE',
-                });
-                if (response.ok) {
-                    router.push('/admin/users');
-                }
-            }} className="bg-red-500 text-white p-2 rounded">
-                Delete
-            </button>
-
-            <div className="mt-8 flex gap-4">
-                <button onClick={() => router.push('/dashboard')} className="bg-blue-500 text-white px-4 py-2 rounded">Dashboard</button>
-                <button onClick={() => router.push('/profile')} className="bg-purple-500 text-white px-4 py-2 rounded">Profile</button>
-                <button onClick={() => router.push('/blogs')} className="bg-yellow-500 text-white px-4 py-2 rounded">Blogs</button>
-                <button onClick={async () => { await fetch('/api/auth/logout', { method: "POST" }); router.push('/login') }} className="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+    if (!user?.roles?.includes("admin")) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <h1 className="text-2xl font-bold text-red-500">403 Forbidden</h1>
+                <Button onClick={() => router.push("/dashboard")}>Go Home</Button>
             </div>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <div className="space-y-4">
+                <Button variant="secondary" onClick={() => router.push("/admin/users")} iconLeft={<ChevronLeft className="h-4 w-4" />}>
+                    Back to Users
+                </Button>
+                <Card><p style={{ color: "var(--hc-muted)" }}>User not found.</p></Card>
+            </div>
+        );
+    }
+
+    const fields = [
+        { icon: User, label: "Full Name", value: profile.name },
+        { icon: Mail, label: "Email", value: profile.email },
+        { icon: Shield, label: "Roles", value: (profile.roles || []).join(", ") || "user" },
+        { icon: Calendar, label: "Age", value: profile.age ?? "—" },
+        { icon: User, label: "Sex", value: profile.sex ?? "—" },
+        { icon: Mail, label: "Emergency Contact", value: profile.emergency_contact_email ?? "—" },
+        {
+            icon: Clock,
+            label: "Joined",
+            value: profile.created_at ? new Date(profile.created_at).toLocaleDateString() : "—",
+        },
+        {
+            icon: Clock,
+            label: "Account Age",
+            value: calculateAccountAge() !== null ? `${calculateAccountAge()} days` : "—",
+        },
+    ];
+
+    return (
+        <div className="space-y-4">
+            <Button
+                variant="secondary"
+                onClick={() => router.push("/admin/users")}
+                iconLeft={<ChevronLeft className="h-4 w-4" />}
+            >
+                Back to Users
+            </Button>
+
+            <Card title={`User: ${profile.name}`}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {fields.map(({ icon: Icon, label, value }) => (
+                        <div
+                            key={label}
+                            className="flex items-start gap-3 rounded-2xl border p-3"
+                            style={{ borderColor: "var(--hc-border)" }}
+                        >
+                            <div
+                                className="mt-0.5 rounded-lg p-1.5"
+                                style={{ background: "rgba(59,130,246,0.1)" }}
+                            >
+                                <Icon className="h-4 w-4" style={{ color: "#3B82F6" }} />
+                            </div>
+                            <div>
+                                <div className="text-xs" style={{ color: "var(--hc-muted)" }}>{label}</div>
+                                <div className="text-sm font-semibold mt-0.5" style={{ color: "var(--hc-text)" }}>
+                                    {String(value)}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-5 pt-4 border-t flex gap-3" style={{ borderColor: "var(--hc-border)" }}>
+                    <Button
+                        onClick={handleDelete}
+                        disabled={busy}
+                        iconLeft={<Trash2 className="h-4 w-4" />}
+                        style={{ background: "#EF4444", color: "#fff" }}
+                    >
+                        {busy ? "Deleting…" : "Delete User"}
+                    </Button>
+                    <Button variant="secondary" onClick={() => router.push("/admin/users")}>
+                        Cancel
+                    </Button>
+                </div>
+            </Card>
         </div>
-    )
+    );
 }

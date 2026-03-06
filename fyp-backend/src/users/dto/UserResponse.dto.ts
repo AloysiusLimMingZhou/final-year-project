@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
 import { sex } from "@prisma/client";
 
 export class UserResponseDto {
@@ -30,6 +30,18 @@ export class UserResponseDto {
   @IsString()
   @IsOptional()
   emergency_contact_email?: string;
+
+  @IsString()
+  @IsOptional()
+  provider?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isverified?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  emergency_contact_isverified?: boolean;
 
   @IsDate()
   @IsOptional()

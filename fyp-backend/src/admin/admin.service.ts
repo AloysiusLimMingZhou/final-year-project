@@ -71,7 +71,20 @@ export class AdminService {
 
         await this.prisma.doctors.delete({
             where: { user_id: BigInt(doctor_id) }
-        })
+        });
+
+        const doctorRole = await this.prisma.roles.findFirst({
+            where: { name: 'doctor' }
+        });
+
+        if (doctorRole) {
+            await this.prisma.users_roles.deleteMany({
+                where: {
+                    user_id: BigInt(doctor_id),
+                    role_id: doctorRole.id
+                }
+            });
+        }
     }
 
     async findPendingDoctorReview(queries: {

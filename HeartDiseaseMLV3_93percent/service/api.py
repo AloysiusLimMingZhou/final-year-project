@@ -11,11 +11,21 @@ from .admin_plot import router as admin_plot_router
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Heart Disease ML API",
     version="0.1.0",
     docs_url="/docs",   # <-- enable Swagger UI
     redoc_url="/redoc", # optional ReDoc
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # order doesn’t matter, but keep health first for sanity checks

@@ -47,8 +47,6 @@ export class PdfService {
 
             doc.fontSize(14).text(`Patient Information:`);
             doc.fontSize(12).text(`Name: ${user?.name}`);
-            doc.fontSize(12).text(`Age: ${user?.age}`);
-            doc.fontSize(12).text(`Gender: ${user?.sex}`);
 
             doc.fontSize(14).text(`Health Information:`);
             doc.fontSize(12).text(`Age: ${healthResult?.age}`);

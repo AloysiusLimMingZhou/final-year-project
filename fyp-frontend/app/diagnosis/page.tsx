@@ -1,325 +1,497 @@
 "use client";
 
-import { useAuth } from "../context/AuthContext";
-import { FormEvent, useEffect, useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
+import { Card, Badge, Button } from "../components/ui-kit";
+import { ClipboardList, Loader2, ArrowRight, AlertTriangle, Info, X, UserCog } from "lucide-react";
 
-export default function Diagnosis() {
-    const { user, loading } = useAuth();
-    const router = useRouter();
-    const [result, setResult] = useState<any>(null);
-    const [isSending, setIsSending] = useState(false);
-    const [highRisk, setHighRisk] = useState(false);
-    const [mediumRisk, setMediumRisk] = useState(false);
-    const [lowRisk, setLowRisk] = useState(false);
-    const [hospitals, setHospitals] = useState<any[]>([]);
-    const [loadingHospitals, setLoadingHospitals] = useState(false);
-    const [error, setError] = useState("");
+type Band = "Low" | "Moderate" | "High";
+type PredictResponse = {
+  savedHealth: any;
+  prediction: {
+    model_version: string;
+    probability: number;
+    band: Band;
+    risk_score: number;
+  };
+};
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        };
-    }, [loading, user, router])
-
-    const fetchHospital = async () => {
-        try {
-            const response = await fetch('/api/health/hospitals');
-            const data = await response.json();
-            console.log(data);
-            setHospitals(Array.isArray(data) ? data : []);
-        } catch (err) {
-            console.error("Error occured", err)
-        } finally {
-            setLoadingHospitals(false);
-        }
-    }
-
-    useEffect(() => {
-        if (result) {
-            fetchHospital();
-        }
-    }, [result]);
-
-    const sendEmergencyContactEmail = async () => {
-        if (!user?.emergency_contact_email) {
-            const confirmRedirect = window.confirm("Please add an emergency contact email!")
-            if (confirmRedirect) {
-                router.push('/profile/update');
-            }
-            return;
-        }
-        setIsSending(true);
-        try {
-            const res = await fetch('/api/users/send-emergency-contact-email', {
-                method: "POST",
-            });
-            if (res.ok) {
-                alert("Emergency alert email sent successfully to your emergency contact!")
-            }
-        } catch (err) {
-            console.log(err);
-            alert("Failed to send emergency alert email. Please try again later.")
-        } finally {
-            setIsSending(false);
-        }
-    }
-
-    const sendAlertEmail = async () => {
-        setIsSending(true);
-        try {
-            const res = await fetch('/api/users/send-alert-email', {
-                method: "POST",
-            });
-            if (res.ok) {
-                alert("Alert email sent successfully to your inbox!")
-            }
-        } catch (err) {
-            console.log(err);
-            alert("Failed to send alert email. Please try again later.")
-        } finally {
-            setIsSending(false);
-        }
-    }
-
-    const downloadPDFReport = async () => {
-        window.open('http://localhost:8080/api/users/diagnosis/download', '_blank');
-    }
-
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setError("");
-        setResult(null);
-
-        const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
-        const payload = {
-            age: Number(data.age),
-            sex: Number(data.sex),
-            cp: Number(data.cp),
-            trestbps: Number(data.trestbps),
-            chol: Number(data.chol),
-            fbs: Number(data.fbs),
-            restecg: Number(data.restecg),
-            thalach: Number(data.thalach),
-            exang: Number(data.exang),
-            oldpeak: Number(data.oldpeak),
-            slope: Number(data.slope),
-            ca: Number(data.ca),
-            thal: Number(data.thal),
-            recorded_at: new Date().toISOString(),
-        };
-
-        try {
-            const response = await fetch('/api/health/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                const resData = await response.json();
-                setResult(resData.prediction);
-
-                const score = resData.prediction.risk_score;
-                setHighRisk(score >= 0.7);
-                setMediumRisk(score < 0.7 && score >= 0.4);
-                setLowRisk(score < 0.4);
-            } else {
-                setError("Prediction failed. Please check inputs.");
-            }
-        } catch (err) {
-            setError("Network error.");
-        }
-    };
-
-    if (loading) return <div>Loading...</div>
-
-    return (
-        <div className="p-8 max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Health Diagnosis</h1>
-
-            {result && lowRisk && (
-                <div className="bg-green-100 p-6 rounded mb-8 border border-green-300">
-                    <h2 className="text-2xl font-bold text-green-800">Results</h2>
-                    <p className="text-lg">Risk Score: <strong>{(result.risk_score * 100).toFixed(2)}%</strong></p>
-                    <p className="text-lg">Band: <strong>{result.band}</strong></p>
-                    <p className="text-sm text-gray-600 mt-2">{result.disclaimer}</p>
-                    <button onClick={sendAlertEmail} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">{isSending ? 'Sending...' : 'Send an alert email to my inbox'}</button>
-                    <button onClick={downloadPDFReport} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">Download PDF Report</button>
-                    <button onClick={() => router.push('/dashboard')} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
-                        Back to Dashboard
-                    </button>
-                    <button onClick={() => setResult(null)} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">
-                        New Prediction
-                    </button>
-                </div>
-            )}
-
-            {result && mediumRisk && (
-                <div className="bg-yellow-100 p-6 rounded mb-8 border border-yellow-300">
-                    <h2 className="text-2xl font-bold text-yellow-800">Results</h2>
-                    <p className="text-lg">Risk Score: <strong>{(result.risk_score * 100).toFixed(2)}%</strong></p>
-                    <p className="text-lg">Band: <strong>{result.band}</strong></p>
-                    <p className="text-sm text-gray-600 mt-2">{result.disclaimer}</p>
-                    <button onClick={sendAlertEmail} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">{isSending ? 'Sending...' : 'Send an alert email to my inbox'}</button>
-                    <button onClick={downloadPDFReport} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">Download PDF Report</button>
-                    <button onClick={() => router.push('/dashboard')} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
-                        Back to Dashboard
-                    </button>
-                    <button onClick={() => setResult(null)} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">
-                        New Prediction
-                    </button>
-                </div>
-            )}
-
-            {result && highRisk && (
-                <div className="bg-green-100 p-6 rounded mb-8 border border-red-300">
-                    <h2 className="text-2xl font-bold text-red-800">Results</h2>
-                    <p className="text-lg">Risk Score: <strong>{(result.risk_score * 100).toFixed(2)}%</strong></p>
-                    <p className="text-lg">Band: <strong>{result.band}</strong></p>
-                    <p className="text-sm text-gray-600 mt-2">{result.disclaimer}</p>
-                    <p className="text-sm text-gray-600 mt-2">High risk detected. Please contact your emergency contact.</p>
-                    <button onClick={sendEmergencyContactEmail} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">{isSending ? 'Sending...' : 'Send an email to my emergency contact'}</button>
-                    <button onClick={sendAlertEmail} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">{isSending ? 'Sending...' : 'Send an alert email to my inbox'}</button>
-                    <button onClick={downloadPDFReport} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">Download PDF Report</button>
-                    <button onClick={() => router.push('/dashboard')} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
-                        Back to Dashboard
-                    </button>
-                    <button onClick={() => setResult(null)} className="mt-4 ml-4 bg-gray-500 text-white px-4 py-2 rounded">
-                        New Prediction
-                    </button>
-                </div>
-            )}
-
-            {result && (
-                <div className="mt-8 bg-white p-6 rounded shadow border border-gray-200">
-                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        Nearest Medical Centers
-                        {user?.latitude
-                            ? <span className="text-xs font-normal text-green-600 bg-green-100 px-2 py-1">Location is Active</span>
-                            : <span className="text-red-600 bg-red-100 px-2 py-1 rounded">Location is disabled</span>
-                        }
-                    </h3>
-
-                    {!user?.latitude && (
-                        <p className="text-red-500 mb-4">
-                            We cannot find any medical centers nearby as you have disabled location access in your browser!
-                            Please enable location in your browser and refresh!
-                        </p>
-                    )}
-
-                    {loadingHospitals
-                        ? (<p>Finding nearest clinics...</p>)
-                        : hospitals.length > 0
-                            ? (
-                                <div>
-                                    {hospitals.map((hospital, idx) => (
-                                        <div key={idx} className="border p-4 rounded hover:bg-gray-50 transition">
-                                            <p className="font-bold text-gray-800">{hospital.name}</p>
-                                            <div className="flex justify-between mt-2 text-sm text-gray-600">
-                                                <span className="capitalize">{hospital.type}</span>
-                                                <span className="font-semibold text-blue-600">{hospital.distance} km away</span>
-                                            </div>
-                                            <a
-                                                href={`http://www.google.com/maps/dir/?api=1&destination=${hospital.latitude},${hospital.longitude}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-xs text-blue-500 hover:underline mt-2 block"
-                                            >
-                                                Get Direction
-                                            </a>
-                                        </div>
-                                    ))}
-                                </div>
-                            )
-                            : (
-                                user?.latitude && <p>No hospital or clinics are found within 5km.</p>
-                            )
-                    }
-                </div>
-            )}
-
-            {!result && (
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded shadow">
-                    <Input name="age" label="Age" type="number" />
-                    <Select name="sex" label="Sex (1=M, 0=F)">
-                        <option value="1">Male</option>
-                        <option value="0">Female</option>
-                    </Select>
-
-                    <Select name="cp" label="Chest Pain Type (0-3)">
-                        <option value="0">Typical Angina</option>
-                        <option value="1">Atypical Angina</option>
-                        <option value="2">Non-anginal Pain</option>
-                        <option value="3">Asymptomatic</option>
-                    </Select>
-
-                    <Input name="trestbps" label="Resting BP (mm Hg)" type="number" />
-                    <Input name="chol" label="Cholesterol (mg/dl)" type="number" />
-
-                    <Select name="fbs" label="Fasting Blood Sugar > 120">
-                        <option value="0">False</option>
-                        <option value="1">True</option>
-                    </Select>
-
-                    <Select name="restecg" label="Resting ECG (0-2)">
-                        <option value="0">Normal</option>
-                        <option value="1">ST-T Wave Abnormality</option>
-                        <option value="2">LV Hypertrophy</option>
-                    </Select>
-
-                    <Input name="thalach" label="Max Heart Rate" type="number" />
-
-                    <Select name="exang" label="Exercise Induced Angina">
-                        <option value="0">No</option>
-                        <option value="1">Yes</option>
-                    </Select>
-
-                    <Input name="oldpeak" label="Oldpeak (Depression)" type="number" step="0.1" />
-
-                    <Select name="slope" label="Slope (0-2)">
-                        <option value="0">Upsloping</option>
-                        <option value="1">Flat</option>
-                        <option value="2">Downsloping</option>
-                    </Select>
-
-                    <Input name="ca" label="Major Vessels (0-3)" type="number" />
-
-                    <Select name="thal" label="Thalassemia (0-3)">
-                        <option value="1">Normal</option>
-                        <option value="2">Fixed Defect</option>
-                        <option value="3">Reversable Defect</option>
-                    </Select>
-
-                    <div className="col-span-1 md:col-span-2 mt-4">
-                        {error && <p className="text-red-500 mb-2">{error}</p>}
-                        <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700">
-                            Run Prediction
-                        </button>
-                    </div>
-                </form>
-            )}
-        </div>
-    );
+function riskTone(band: Band) {
+  return band === "Low" ? "low" : band === "High" ? "high" : "mid";
 }
 
-function Input({ name, label, type = "text", step = "1" }: any) {
-    return (
-        <div className="flex flex-col">
-            <label className="text-sm font-semibold mb-1">{label}</label>
-            <input name={name} type={type} step={step} required className="border p-2 rounded" />
+export default function DiagnosisPage() {
+  const router = useRouter();
+  const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
+
+  // Profile data
+  const [profileAge, setProfileAge] = React.useState<number | null>(null);
+  const [profileSex, setProfileSex] = React.useState<number | null>(null);
+  const [profileLoading, setProfileLoading] = React.useState(true);
+  const [showMissingPopup, setShowMissingPopup] = React.useState(false);
+
+  // ✅ Backend DTO fields (age & sex fetched from profile)
+  const [form, setForm] = React.useState({
+    cp: 0,
+    trestbps: 120,
+    chol: 200,
+    fbs: 0,
+    restecg: 0,
+    thalach: 170,
+    exang: 0,
+    oldpeak: 0.0,
+    slope: 1,
+    ca: 0,
+    thal: 2,
+  });
+
+  // Fetch user profile on mount to get age & sex
+  React.useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/users/profile", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        const data = await res.json();
+
+        const age = data.age != null ? Number(data.age) : null;
+        // Map sex string to numeric: male=1, female=0
+        let sex: number | null = null;
+        if (data.sex === "male") sex = 1;
+        else if (data.sex === "female") sex = 0;
+        else if (data.sex != null) sex = Number(data.sex);
+
+        setProfileAge(age);
+        setProfileSex(sex);
+
+        if (age == null || sex == null) {
+          setShowMissingPopup(true);
+        }
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+        setError("Could not load your profile. Please try again.");
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  const profileMissing = profileAge == null || profileSex == null;
+
+  function validateForm(): boolean {
+    const errors: Record<string, string> = {};
+    const numericFields = [
+      { key: "trestbps", label: "Resting BP" },
+      { key: "chol", label: "Cholesterol" },
+      { key: "thalach", label: "Max HR" },
+      { key: "oldpeak", label: "Oldpeak" },
+    ];
+    for (const { key, label } of numericFields) {
+      const val = Number((form as any)[key]);
+      if (val < 0) {
+        errors[key] = `${label} cannot be negative`;
+      }
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (profileMissing) {
+      setShowMissingPopup(true);
+      return;
+    }
+
+    if (!validateForm()) return;
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch("/api/health/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          age: profileAge,
+          sex: profileSex,
+          cp: Number(form.cp),
+          trestbps: Number(form.trestbps),
+          chol: Number(form.chol),
+          fbs: Number(form.fbs),
+          restecg: Number(form.restecg),
+          thalach: Number(form.thalach),
+          exang: Number(form.exang),
+          oldpeak: Number(form.oldpeak),
+          slope: Number(form.slope),
+          ca: Number(form.ca),
+          thal: Number(form.thal),
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        if (res.status === 401) throw new Error("Not logged in (401). Please login again.");
+        throw new Error(msg || `Predict failed (${res.status})`);
+      }
+
+      const data = (await res.json()) as PredictResponse;
+
+      // ✅ Save for /results to display
+      sessionStorage.setItem("hc_latest_prediction", JSON.stringify(data));
+
+      router.push("/results");
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Missing age/sex popup */}
+      {showMissingPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+        >
+          <div
+            className="relative rounded-2xl border p-6 shadow-2xl max-w-md w-full mx-4"
+            style={{ background: "var(--surface)", borderColor: "var(--borderSoft)", color: "var(--text)" }}
+          >
+            <button
+              onClick={() => setShowMissingPopup(false)}
+              className="absolute top-3 right-3 p-1 rounded-lg transition-colors hover:bg-black/10"
+            >
+              <X className="h-4 w-4" style={{ color: "var(--muted)" }} />
+            </button>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div
+                className="rounded-2xl p-3 border"
+                style={{ borderColor: "var(--borderSoft)", background: "rgba(251,146,60,0.1)" }}
+              >
+                <UserCog className="h-8 w-8" style={{ color: "#FB923C" }} />
+              </div>
+              <h3 className="text-lg font-semibold">Profile Incomplete</h3>
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
+                Your <strong>age</strong> and <strong>sex</strong> are required for heart screening but are not set in your profile.
+                Please update your profile before proceeding.
+              </p>
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowMissingPopup(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => router.push("/profile")}
+                  iconRight={<ArrowRight className="h-4 w-4" />}
+                >
+                  Go to Profile
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-    )
+      )}
+
+      <Card title="Heart screening">
+        {profileLoading ? (
+          <div className="py-10 text-sm text-center" style={{ color: "var(--muted)" }}>
+            <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+            Loading your profile data…
+          </div>
+        ) : (
+          <>
+            {/* Display age & sex read-only info */}
+            <div
+              className="mb-4 rounded-xl border p-3 text-sm flex items-start gap-2"
+              style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
+            >
+              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: "var(--accent)" }} />
+              <div>
+                <span className="font-semibold">Profile info:</span>{" "}
+                Age = <strong>{profileAge ?? "Not set"}</strong>,
+                Sex = <strong>{profileSex === 1 ? "Male" : profileSex === 0 ? "Female" : "Not set"}</strong>
+                {profileMissing && (
+                  <span className="ml-2 text-xs" style={{ color: "#FB923C" }}>
+                    — Please{" "}
+                    <button
+                      onClick={() => router.push("/profile")}
+                      className="underline font-semibold"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      update your profile
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {error ? (
+              <div
+                className="mb-4 rounded-xl border p-3 text-sm flex items-start gap-2"
+                style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
+              >
+                <AlertTriangle className="h-4 w-4 mt-0.5" style={{ color: "var(--accent)" }} />
+                <div>
+                  <div className="font-semibold">Prediction failed</div>
+                  <div style={{ color: "var(--muted)" }}>{error}</div>
+                </div>
+              </div>
+            ) : null}
+
+            <form onSubmit={onSubmit} className="grid gap-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                <FieldSelect
+                  label="Chest pain (cp)"
+                  value={form.cp}
+                  onChange={(v) => setForm({ ...form, cp: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                    { label: "2", value: 2 },
+                    { label: "3", value: 3 },
+                  ]}
+                  description={"chest pain type\n-- Value 1: typical angina\n-- Value 2: atypical angina\n-- Value 3: non-anginal pain\n-- Value 4: asymptomatic"}
+                />
+                <FieldNumber
+                  label="Resting BP (trestbps)"
+                  value={form.trestbps}
+                  onChange={(v) => setForm({ ...form, trestbps: v })}
+                  description="resting blood pressure (in mm Hg on admission to the hospital)"
+                  error={validationErrors.trestbps}
+                  min={1}
+                />
+                <FieldNumber
+                  label="Cholesterol (chol)"
+                  value={form.chol}
+                  onChange={(v) => setForm({ ...form, chol: v })}
+                  description="serum cholestoral in mg/dl"
+                  error={validationErrors.chol}
+                  min={1}
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <FieldSelect
+                  label="Fasting blood sugar (fbs)"
+                  value={form.fbs}
+                  onChange={(v) => setForm({ ...form, fbs: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                  ]}
+                  description="(fasting blood sugar > 120 mg/dl)  (1 = true; 0 = false)"
+                />
+                <FieldSelect
+                  label="Rest ECG (restecg)"
+                  value={form.restecg}
+                  onChange={(v) => setForm({ ...form, restecg: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                    { label: "2", value: 2 },
+                  ]}
+                  description={"resting electrocardiographic results\n-- Value 0: normal\n-- Value 1: having ST-T wave abnormality\n-- Value 2: showing probable or definite left ventricular hypertrophy"}
+                />
+                <FieldNumber
+                  label="Max HR (thalach)"
+                  value={form.thalach}
+                  onChange={(v) => setForm({ ...form, thalach: v })}
+                  description="maximum heart rate achieved"
+                  error={validationErrors.thalach}
+                  min={1}
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <FieldSelect
+                  label="Exercise angina (exang)"
+                  value={form.exang}
+                  onChange={(v) => setForm({ ...form, exang: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                  ]}
+                  description="exercise induced angina (1 = yes; 0 = no)"
+                />
+                <FieldNumber
+                  label="Oldpeak"
+                  step="0.1"
+                  value={form.oldpeak}
+                  onChange={(v) => setForm({ ...form, oldpeak: v })}
+                  description="ST depression induced by exercise relative to rest"
+                  error={validationErrors.oldpeak}
+                  min={0}
+                />
+                <FieldSelect
+                  label="Slope"
+                  value={form.slope}
+                  onChange={(v) => setForm({ ...form, slope: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                    { label: "2", value: 2 },
+                  ]}
+                  description={"the slope of the peak exercise ST segment\n-- Value 1: upsloping\n-- Value 2: flat\n-- Value 3: downsloping"}
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <FieldSelect
+                  label="CA"
+                  value={form.ca}
+                  onChange={(v) => setForm({ ...form, ca: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                    { label: "2", value: 2 },
+                    { label: "3", value: 3 },
+                  ]}
+                  description="number of major vessels (0-3) colored by flourosopy"
+                />
+                <FieldSelect
+                  label="Thal"
+                  value={form.thal}
+                  onChange={(v) => setForm({ ...form, thal: v })}
+                  options={[
+                    { label: "0", value: 0 },
+                    { label: "1", value: 1 },
+                    { label: "2", value: 2 },
+                    { label: "3", value: 3 },
+                  ]}
+                  description={"3 = normal\n6 = fixed defect\n7 = reversable defect (Thalassemia)"}
+                />
+
+                <div className="flex items-end justify-end gap-2">
+                  <Button variant="secondary" onClick={() => router.push("/dashboard")} iconLeft={<ClipboardList className="h-4 w-4" />}>
+                    Back
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={profileMissing || submitting}
+                    iconLeft={submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
+                    iconRight={!submitting ? <ArrowRight className="h-4 w-4" /> : undefined}
+                  >
+                    {submitting ? "Scanning..." : profileMissing ? "Profile incomplete" : "Scan now"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-xl border p-3 text-sm" style={{ borderColor: "var(--borderSoft)", color: "var(--muted)" }}>
+                Educational estimate only. Not a medical diagnosis.
+              </div>
+            </form>
+          </>
+        )}
+      </Card>
+    </div>
+  );
 }
 
-function Select({ name, label, children }: any) {
-    return (
-        <div className="flex flex-col">
-            <label className="text-sm font-semibold mb-1">{label}</label>
-            <select name={name} required className="border p-2 rounded">
-                {children}
-            </select>
+function FieldNumber({
+  label,
+  value,
+  onChange,
+  step,
+  description,
+  error,
+  min,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: string;
+  description?: string;
+  error?: string;
+  min?: number;
+}) {
+  return (
+    <label className="block">
+      <div className="flex items-center gap-1.5 text-xs mb-1" style={{ color: "var(--muted)" }}>
+        {label}
+        {description && (
+          <div className="group relative flex cursor-help items-center">
+            <Info className="h-3.5 w-3.5" />
+            <div
+              className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-56 -translate-x-1/2 rounded-xl border p-2.5 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50 whitespace-pre-wrap font-normal leading-relaxed"
+              style={{ background: "var(--surface)", borderColor: "var(--borderSoft)", color: "var(--text)" }}
+            >
+              {description}
+            </div>
+          </div>
+        )}
+      </div>
+      <input
+        type="number"
+        step={step}
+        min={min}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
+        style={{
+          borderColor: error ? "#EF4444" : "var(--borderSoft)",
+          color: "var(--text)",
+        }}
+      />
+      {error && (
+        <div className="text-xs mt-1" style={{ color: "#EF4444" }}>
+          {error}
         </div>
-    )
+      )}
+    </label>
+  );
+}
+
+function FieldSelect({
+  label,
+  value,
+  onChange,
+  options,
+  description,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  options: { label: string; value: number }[];
+  description?: string;
+}) {
+  return (
+    <label className="block">
+      <div className="flex items-center gap-1.5 text-xs mb-1" style={{ color: "var(--muted)" }}>
+        {label}
+        {description && (
+          <div className="group relative flex cursor-help items-center">
+            <Info className="h-3.5 w-3.5" />
+            <div
+              className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-56 -translate-x-1/2 rounded-xl border p-2.5 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50 whitespace-pre-wrap font-normal leading-relaxed"
+              style={{ background: "var(--surface)", borderColor: "var(--borderSoft)", color: "var(--text)" }}
+            >
+              {description}
+            </div>
+          </div>
+        )}
+      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
+        style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }

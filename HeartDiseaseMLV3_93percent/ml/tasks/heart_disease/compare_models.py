@@ -15,6 +15,8 @@ from sklearn.metrics import (
     brier_score_loss,
     confusion_matrix,
     f1_score,
+    precision_score,
+    recall_score,
     roc_auc_score,
 )
 from sklearn.model_selection import train_test_split
@@ -125,6 +127,8 @@ def evaluate(probs, preds, y_true):
         "roc_auc": float(roc_auc_score(y_true, probs)),
         "accuracy@0.5": float(accuracy_score(y_true, preds)),
         "f1@0.5": float(f1_score(y_true, preds)),
+        "precision@0.5": float(precision_score(y_true, preds)),
+        "recall@0.5": float(recall_score(y_true, preds)),
         "brier": float(brier_score_loss(y_true, probs)),
     }
     tn, fp, fn, tp = confusion_matrix(y_true, preds).ravel()
@@ -225,6 +229,8 @@ def main():
                 "roc_auc": m["roc_auc"],
                 "accuracy@0.5": m["accuracy@0.5"],
                 "f1@0.5": m["f1@0.5"],
+                "precision@0.5": m["precision@0.5"],
+                "recall@0.5": m["recall@0.5"],
                 "brier": m["brier"],
                 "tn": m["tn"], "fp": m["fp"], "fn": m["fn"], "tp": m["tp"],
             }

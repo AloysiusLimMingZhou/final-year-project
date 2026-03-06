@@ -48,8 +48,6 @@ export class HealthService {
 
     async findMany(user_id: string) {
         const healths = await this.prisma.health.findMany({
-            skip: 0,
-            take: 5,
             where: { user_id: BigInt(user_id) },
             include: { health_prediction: true },
             orderBy: { recorded_at: 'desc' },
@@ -81,9 +79,16 @@ export class HealthService {
     async predictHealth(user_id: string, healthRecord: CreateHealthDto): Promise<any> {
         const savedHealth = await this.createHealthRecord(user_id, healthRecord);
 
-        const response = await lastValueFrom(
-            this.httpService.post('http://localhost:8002/predict/heart_disease', healthRecord)
-        );
+        let response: any;
+        try {
+            response = await lastValueFrom(
+                this.httpService.post('http://localhost:8002/predict/heart_disease', healthRecord)
+            );
+        } catch (err) {
+            console.error('ML service (port 8002) is unreachable or returned an error:', err?.message ?? err);
+            throw new NotFoundException('ML prediction service is currently unavailable. Health record was saved but prediction could not be completed.');
+        }
+
         const data: HealthPredictionDto = response.data;
 
         await this.prisma.health_prediction.create({

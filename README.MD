@@ -55,7 +55,21 @@ python -m venv .venv (To create a python virtual environment if loaded in the be
 pip install -r requirements.txt
 ```
 
-# Step 3: Set up the database
+# Step 3: Setup Environment Variables, Data Folders & Model Weights
+Before running the services, you must provide the necessary environment configurations, data files, and model weights:
+
+1. **Backend Environment Variables**
+   - Create a `.env` file inside `fyp-backend/` (Refer to the necessary database, JWT, and email SMTP variables).
+
+2. **RAG Model Environment Variables & Data**
+   - Create a `.env` file inside `RAGFinalYear/` to store your LLM configuration and API keys.
+   - Create a `data/` folder inside `RAGFinalYear/` and place your reference documents for the RAG pipeline.
+
+3. **Machine Learning Data & Model Weights**
+   - Create a `data/` folder inside `HeartDiseaseMLV3_93percent/` and place your dataset CSV file for the heart disease predictions.
+   - Place your trained model weights (`.json` and `.pkl` files) into `HeartDiseaseMLV3_93percent/ml/tasks/heart_disease/`.
+
+# Step 4: Set up the database
 1. Create a database in postgresql terminal named "finalyearprojectdb"
 2. Run the backend with migrations:
 ```bash
@@ -66,7 +80,7 @@ npx prisma generate
 npx prisma db seed
 ```
 
-# Step 4: Run the application
+# Step 5: Run the application
 1. Run the frontend 
 (1st terminal: 
 ```bash
@@ -94,8 +108,7 @@ uvicorn service.api:app --reload --port 8002 (The server will run on http://loca
 ```bash
 cd RAGFinalYear
 ./.venv/Scripts/activate (skip this if in virtual environment already)
-py generation.py (If you see ImportError: sys.meta_path is None, Python is likely shutting down, dont panic. This is because I didnt add main() inside the file. Thus the flag. It doesnt harm anything and it should run just fine)
-py RAGMedicalChatbot.py
+python RAGMedicalChatbot.py
 uvicorn server:app --reload --port 8001 (The server will run on http://localhost:8001)
 ```
 )

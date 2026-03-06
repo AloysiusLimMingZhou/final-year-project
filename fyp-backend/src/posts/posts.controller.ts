@@ -8,6 +8,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from 'src/auth/decorators/user.decarator';
 import { blogs_category } from '@prisma/client';
 import { PostsPaginationDto } from './dto/posts-pagination.dto';
+import { ParseBigIntPipe } from 'src/common/parse-bigint.pipe';
+import { IsVerifiedGuard } from 'src/auth/guards/isverified.guard';
 
 @Controller('posts')
 export class PostsController {
@@ -19,83 +21,83 @@ export class PostsController {
   }
 
   @Post('create-post')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('doctor')
   create(@CurrentUser() user, @Body() createPostDto: CreatePostDto): Promise<CreatePostDto> {
     return this.postsService.createPost(user.id.toString(), createPostDto);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
   findMany(@Query() query: PostsPaginationDto): Promise<CreatePostDto[]> {
-    const { page = 1, limit = 20, search } = query;
+    const { page = 1, limit = 20, search, category } = query;
     const skip: number = (page - 1) * limit;
-    return this.postsService.findManyPosts({ skip, take: limit, search });
+    return this.postsService.findManyPosts({ skip, take: limit, search, category });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('doctor')
   @Get('pending-posts')
   getAllPendingPostsByUserId(@CurrentUser() user, @Query() query: PostsPaginationDto): Promise<CreatePostDto[]> {
-    const { page = 1, limit = 20, search } = query;
+    const { page = 1, limit = 20, search, category } = query;
     const skip: number = (page - 1) * limit;
-    return this.postsService.listAllPendingPostsByUserId(user.id.toString(), { skip, take: limit, search });
+    return this.postsService.listAllPendingPostsByUserId(user.id.toString(), { skip, take: limit, search, category });
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('admin')
   @Get('review-posts')
   listPostsForReview(@Query() query: PostsPaginationDto): Promise<CreatePostDto[]> {
-    const { page = 1, limit = 20, search } = query;
+    const { page = 1, limit = 20, search, category } = query;
     const skip: number = (page - 1) * limit;
-    return this.postsService.listAllPostsForReview({ skip, take: limit, search });
+    return this.postsService.listAllPostsForReview({ skip, take: limit, search, category });
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string): Promise<CreatePostDto> {
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard)
+  findOne(@Param('id', ParseBigIntPipe) id: bigint): Promise<CreatePostDto> {
     return this.postsService.findPostById(id.toString());
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('doctor')
   @Put(':id/update-post')
-  update(@CurrentUser() user, @Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<UpdatePostDto> {
-    return this.postsService.updatePostById(user.id.toString(), id, updatePostDto);
+  update(@CurrentUser() user, @Param('id', ParseBigIntPipe) id: bigint, @Body() updatePostDto: UpdatePostDto): Promise<UpdatePostDto> {
+    return this.postsService.updatePostById(user.id.toString(), id.toString(), updatePostDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('doctor')
   @Get(':id/pending-posts')
-  getOnePendingPostByUserId(@Param('id') id: string, @CurrentUser() user) {
-    return this.postsService.listOnePendingPostByUserId(id, user.id.toString())
+  getOnePendingPostByUserId(@Param('id', ParseBigIntPipe) id: bigint, @CurrentUser() user) {
+    return this.postsService.listOnePendingPostByUserId(id.toString(), user.id.toString())
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id/delete-post')
-  remove(@Param('id') id: string): Promise<void> {
-    return this.postsService.deletePostById(id);
+  remove(@Param('id', ParseBigIntPipe) id: bigint): Promise<void> {
+    return this.postsService.deletePostById(id.toString());
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('admin')
   @Get(':id/review-post')
-  reviewPost(@Param('id') id: string) {
-    return this.postsService.reviewPostById(id);
+  reviewPost(@Param('id', ParseBigIntPipe) id: bigint) {
+    return this.postsService.reviewPostById(id.toString());
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('admin')
   @Post(':id/approve-post')
-  approve(@Param('id') id: string): Promise<void> {
-    return this.postsService.approvePostById(id)
+  approve(@CurrentUser() user, @Param('id', ParseBigIntPipe) id: bigint): Promise<void> {
+    return this.postsService.approvePostById(id.toString(), user.id.toString())
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
   @Roles('admin')
   @Post(':id/reject-post')
-  reject(@Param('id') id: string): Promise<void> {
-    return this.postsService.rejectPostById(id)
+  reject(@CurrentUser() user, @Param('id', ParseBigIntPipe) id: bigint): Promise<void> {
+    return this.postsService.rejectPostById(id.toString(), user.id.toString())
   }
 }
