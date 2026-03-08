@@ -117,7 +117,7 @@ export default function ChatPage() {
   const statusTone = status === "Online" ? "var(--accent)" : status === "Offline" ? "#ef4444" : "var(--muted)";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-hidden">
       <Card
         title="Assistant"
         headerRight={
@@ -151,8 +151,7 @@ export default function ChatPage() {
           style={{
             borderColor: "var(--borderSoft)",
             background: "rgba(100,116,139,0.04)",
-            height: "calc(100vh - 290px)",
-            minHeight: 420,
+            height: "60vh",
           }}
         >
           {msgs.map((m, i) => (
