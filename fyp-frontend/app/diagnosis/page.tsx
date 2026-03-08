@@ -4,8 +4,10 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Card, Badge, Button } from "../components/ui-kit";
 import { ClipboardList, Loader2, ArrowRight, AlertTriangle, Info, X, UserCog } from "lucide-react";
+import SoftSelect from "../components/ui/Select";
 
 type Band = "Low" | "Moderate" | "High";
+
 type PredictResponse = {
   savedHealth: any;
   prediction: {
@@ -32,7 +34,7 @@ export default function DiagnosisPage() {
   const [profileLoading, setProfileLoading] = React.useState(true);
   const [showMissingPopup, setShowMissingPopup] = React.useState(false);
 
-  // ✅ Backend DTO fields (age & sex fetched from profile)
+  // Backend DTO fields (age & sex fetched from profile)
   const [form, setForm] = React.useState({
     cp: 0,
     trestbps: 120,
@@ -47,16 +49,16 @@ export default function DiagnosisPage() {
     thal: 2,
   });
 
-  // Fetch user profile on mount to get age & sex
   React.useEffect(() => {
     async function fetchProfile() {
       try {
         const res = await fetch("/api/users/profile", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to fetch profile");
+
         const data = await res.json();
 
         const age = data.age != null ? Number(data.age) : null;
-        // Map sex string to numeric: male=1, female=0
+
         let sex: number | null = null;
         if (data.sex === "male") sex = 1;
         else if (data.sex === "female") sex = 0;
@@ -75,6 +77,7 @@ export default function DiagnosisPage() {
         setProfileLoading(false);
       }
     }
+
     fetchProfile();
   }, []);
 
@@ -82,18 +85,21 @@ export default function DiagnosisPage() {
 
   function validateForm(): boolean {
     const errors: Record<string, string> = {};
+
     const numericFields = [
       { key: "trestbps", label: "Resting BP" },
       { key: "chol", label: "Cholesterol" },
       { key: "thalach", label: "Max HR" },
       { key: "oldpeak", label: "Oldpeak" },
     ];
+
     for (const { key, label } of numericFields) {
       const val = Number((form as any)[key]);
       if (val < 0) {
         errors[key] = `${label} cannot be negative`;
       }
     }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -141,9 +147,7 @@ export default function DiagnosisPage() {
 
       const data = (await res.json()) as PredictResponse;
 
-      // ✅ Save for /results to display
       sessionStorage.setItem("hc_latest_prediction", JSON.stringify(data));
-
       router.push("/results");
     } catch (err: any) {
       setError(err?.message || "Something went wrong.");
@@ -154,44 +158,54 @@ export default function DiagnosisPage() {
 
   return (
     <div className="space-y-4">
-      {/* Missing age/sex popup */}
       {showMissingPopup && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
         >
           <div
-            className="relative rounded-2xl border p-6 shadow-2xl max-w-md w-full mx-4"
-            style={{ background: "var(--surface)", borderColor: "var(--borderSoft)", color: "var(--text)" }}
+            className="relative mx-4 w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+            style={{
+              background: "var(--surface)",
+              borderColor: "var(--borderSoft)",
+              color: "var(--text)",
+            }}
           >
             <button
               onClick={() => setShowMissingPopup(false)}
-              className="absolute top-3 right-3 p-1 rounded-lg transition-colors hover:bg-black/10"
+              className="absolute right-3 top-3 rounded-lg p-1 transition-colors hover:bg-black/10"
+              type="button"
             >
               <X className="h-4 w-4" style={{ color: "var(--muted)" }} />
             </button>
+
             <div className="flex flex-col items-center gap-4 text-center">
               <div
-                className="rounded-2xl p-3 border"
-                style={{ borderColor: "var(--borderSoft)", background: "rgba(251,146,60,0.1)" }}
+                className="rounded-2xl border p-3"
+                style={{
+                  borderColor: "var(--borderSoft)",
+                  background: "rgba(251,146,60,0.1)",
+                }}
               >
                 <UserCog className="h-8 w-8" style={{ color: "#FB923C" }} />
               </div>
+
               <h3 className="text-lg font-semibold">Profile Incomplete</h3>
+
               <p className="text-sm" style={{ color: "var(--muted)" }}>
-                Your <strong>age</strong> and <strong>sex</strong> are required for heart screening but are not set in your profile.
-                Please update your profile before proceeding.
+                Your <strong>age</strong> and <strong>sex</strong> are required for heart screening
+                but are not set in your profile. Please update your profile before proceeding.
               </p>
-              <div className="flex gap-3 w-full">
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowMissingPopup(false)}
-                >
+
+              <div className="flex w-full gap-3">
+                <Button variant="secondary" onClick={() => setShowMissingPopup(false)} type="button">
                   Cancel
                 </Button>
+
                 <Button
                   onClick={() => router.push("/profile")}
                   iconRight={<ArrowRight className="h-4 w-4" />}
+                  type="button"
                 >
                   Go to Profile
                 </Button>
@@ -203,29 +217,31 @@ export default function DiagnosisPage() {
 
       <Card title="Heart screening">
         {profileLoading ? (
-          <div className="py-10 text-sm text-center" style={{ color: "var(--muted)" }}>
-            <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+          <div className="py-10 text-center text-sm" style={{ color: "var(--muted)" }}>
+            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
             Loading your profile data…
           </div>
         ) : (
           <>
-            {/* Display age & sex read-only info */}
             <div
-              className="mb-4 rounded-xl border p-3 text-sm flex items-start gap-2"
+              className="mb-4 flex items-start gap-2 rounded-xl border p-3 text-sm"
               style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
             >
-              <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: "var(--accent)" }} />
+              <Info className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: "var(--accent)" }} />
               <div>
                 <span className="font-semibold">Profile info:</span>{" "}
-                Age = <strong>{profileAge ?? "Not set"}</strong>,
-                Sex = <strong>{profileSex === 1 ? "Male" : profileSex === 0 ? "Female" : "Not set"}</strong>
+                Age = <strong>{profileAge ?? "Not set"}</strong>, Sex ={" "}
+                <strong>
+                  {profileSex === 1 ? "Male" : profileSex === 0 ? "Female" : "Not set"}
+                </strong>
                 {profileMissing && (
                   <span className="ml-2 text-xs" style={{ color: "#FB923C" }}>
                     — Please{" "}
                     <button
                       onClick={() => router.push("/profile")}
-                      className="underline font-semibold"
+                      className="font-semibold underline"
                       style={{ color: "var(--accent)" }}
+                      type="button"
                     >
                       update your profile
                     </button>
@@ -236,10 +252,10 @@ export default function DiagnosisPage() {
 
             {error ? (
               <div
-                className="mb-4 rounded-xl border p-3 text-sm flex items-start gap-2"
+                className="mb-4 flex items-start gap-2 rounded-xl border p-3 text-sm"
                 style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
               >
-                <AlertTriangle className="h-4 w-4 mt-0.5" style={{ color: "var(--accent)" }} />
+                <AlertTriangle className="mt-0.5 h-4 w-4" style={{ color: "var(--accent)" }} />
                 <div>
                   <div className="font-semibold">Prediction failed</div>
                   <div style={{ color: "var(--muted)" }}>{error}</div>
@@ -259,8 +275,11 @@ export default function DiagnosisPage() {
                     { label: "2", value: 2 },
                     { label: "3", value: 3 },
                   ]}
-                  description={"chest pain type\n-- Value 1: typical angina\n-- Value 2: atypical angina\n-- Value 3: non-anginal pain\n-- Value 4: asymptomatic"}
+                  description={
+                    "chest pain type\n-- Value 1: typical angina\n-- Value 2: atypical angina\n-- Value 3: non-anginal pain\n-- Value 4: asymptomatic"
+                  }
                 />
+
                 <FieldNumber
                   label="Resting BP (trestbps)"
                   value={form.trestbps}
@@ -269,6 +288,7 @@ export default function DiagnosisPage() {
                   error={validationErrors.trestbps}
                   min={1}
                 />
+
                 <FieldNumber
                   label="Cholesterol (chol)"
                   value={form.chol}
@@ -290,6 +310,7 @@ export default function DiagnosisPage() {
                   ]}
                   description="(fasting blood sugar > 120 mg/dl)  (1 = true; 0 = false)"
                 />
+
                 <FieldSelect
                   label="Rest ECG (restecg)"
                   value={form.restecg}
@@ -299,8 +320,11 @@ export default function DiagnosisPage() {
                     { label: "1", value: 1 },
                     { label: "2", value: 2 },
                   ]}
-                  description={"resting electrocardiographic results\n-- Value 0: normal\n-- Value 1: having ST-T wave abnormality\n-- Value 2: showing probable or definite left ventricular hypertrophy"}
+                  description={
+                    "resting electrocardiographic results\n-- Value 0: normal\n-- Value 1: having ST-T wave abnormality\n-- Value 2: showing probable or definite left ventricular hypertrophy"
+                  }
                 />
+
                 <FieldNumber
                   label="Max HR (thalach)"
                   value={form.thalach}
@@ -322,6 +346,7 @@ export default function DiagnosisPage() {
                   ]}
                   description="exercise induced angina (1 = yes; 0 = no)"
                 />
+
                 <FieldNumber
                   label="Oldpeak"
                   step="0.1"
@@ -331,6 +356,7 @@ export default function DiagnosisPage() {
                   error={validationErrors.oldpeak}
                   min={0}
                 />
+
                 <FieldSelect
                   label="Slope"
                   value={form.slope}
@@ -340,7 +366,9 @@ export default function DiagnosisPage() {
                     { label: "1", value: 1 },
                     { label: "2", value: 2 },
                   ]}
-                  description={"the slope of the peak exercise ST segment\n-- Value 1: upsloping\n-- Value 2: flat\n-- Value 3: downsloping"}
+                  description={
+                    "the slope of the peak exercise ST segment\n-- Value 1: upsloping\n-- Value 2: flat\n-- Value 3: downsloping"
+                  }
                 />
               </div>
 
@@ -357,6 +385,7 @@ export default function DiagnosisPage() {
                   ]}
                   description="number of major vessels (0-3) colored by flourosopy"
                 />
+
                 <FieldSelect
                   label="Thal"
                   value={form.thal}
@@ -371,7 +400,12 @@ export default function DiagnosisPage() {
                 />
 
                 <div className="flex items-end justify-end gap-2">
-                  <Button variant="secondary" onClick={() => router.push("/dashboard")} iconLeft={<ClipboardList className="h-4 w-4" />}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => router.push("/dashboard")}
+                    iconLeft={<ClipboardList className="h-4 w-4" />}
+                    type="button"
+                  >
                     Back
                   </Button>
 
@@ -386,7 +420,10 @@ export default function DiagnosisPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border p-3 text-sm" style={{ borderColor: "var(--borderSoft)", color: "var(--muted)" }}>
+              <div
+                className="rounded-xl border p-3 text-sm"
+                style={{ borderColor: "var(--borderSoft)", color: "var(--muted)" }}
+              >
                 Educational estimate only. Not a medical diagnosis.
               </div>
             </form>
@@ -416,20 +453,25 @@ function FieldNumber({
 }) {
   return (
     <label className="block">
-      <div className="flex items-center gap-1.5 text-xs mb-1" style={{ color: "var(--muted)" }}>
+      <div className="mb-1 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
         {label}
         {description && (
           <div className="group relative flex cursor-help items-center">
             <Info className="h-3.5 w-3.5" />
             <div
-              className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-56 -translate-x-1/2 rounded-xl border p-2.5 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50 whitespace-pre-wrap font-normal leading-relaxed"
-              style={{ background: "var(--surface)", borderColor: "var(--borderSoft)", color: "var(--text)" }}
+              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 whitespace-pre-wrap rounded-xl border p-2.5 text-xs font-normal leading-relaxed opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+              style={{
+                background: "var(--surface)",
+                borderColor: "var(--borderSoft)",
+                color: "var(--text)",
+              }}
             >
               {description}
             </div>
           </div>
         )}
       </div>
+
       <input
         type="number"
         step={step}
@@ -442,8 +484,9 @@ function FieldNumber({
           color: "var(--text)",
         }}
       />
+
       {error && (
-        <div className="text-xs mt-1" style={{ color: "#EF4444" }}>
+        <div className="mt-1 text-xs" style={{ color: "#EF4444" }}>
           {error}
         </div>
       )}
@@ -466,32 +509,33 @@ function FieldSelect({
 }) {
   return (
     <label className="block">
-      <div className="flex items-center gap-1.5 text-xs mb-1" style={{ color: "var(--muted)" }}>
+      <div className="mb-1 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
         {label}
         {description && (
           <div className="group relative flex cursor-help items-center">
             <Info className="h-3.5 w-3.5" />
             <div
-              className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-56 -translate-x-1/2 rounded-xl border p-2.5 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50 whitespace-pre-wrap font-normal leading-relaxed"
-              style={{ background: "var(--surface)", borderColor: "var(--borderSoft)", color: "var(--text)" }}
+              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 whitespace-pre-wrap rounded-xl border p-2.5 text-xs font-normal leading-relaxed opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+              style={{
+                background: "var(--surface)",
+                borderColor: "var(--borderSoft)",
+                color: "var(--text)",
+              }}
             >
               {description}
             </div>
           </div>
         )}
       </div>
-      <select
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-xl border bg-transparent px-3 py-2 text-sm"
-        style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+
+      <SoftSelect
+        value={String(value)}
+        onChange={(v: string) => onChange(Number(v))}
+        options={options.map((o) => ({
+          label: o.label,
+          value: String(o.value),
+        }))}
+      />
     </label>
   );
 }

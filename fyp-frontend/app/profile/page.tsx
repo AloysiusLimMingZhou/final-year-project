@@ -4,9 +4,19 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { UserCircle2, Stethoscope, ShieldCheck, ShieldX, KeyRound, Mail } from "lucide-react";
+import {
+  UserCircle2,
+  Stethoscope,
+  ShieldCheck,
+  ShieldX,
+  KeyRound,
+  Mail,
+  Upload,
+  Image as ImageIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import SoftSelect from "../components/ui/Select";
 
 type ProfileApi = {
   id: string;
@@ -19,7 +29,6 @@ type ProfileApi = {
   provider?: string | null;
   isverified?: boolean;
   emergency_contact_isverified?: boolean;
-  // Doctor-specific fields
   specialization?: string | null;
   place_of_practice?: string | null;
   years_of_experience?: number | null;
@@ -50,24 +59,20 @@ export default function ProfilePage() {
   const [emergencyEmail, setEmergencyEmail] = React.useState("");
   const [originalEmergencyEmail, setOriginalEmergencyEmail] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [selectedAvatarName, setSelectedAvatarName] = React.useState("No file chosen");
 
-  // Doctor fields
   const [specialization, setSpecialization] = React.useState("");
   const [placeOfPractice, setPlaceOfPractice] = React.useState("");
   const [yearsOfExperience, setYearsOfExperience] = React.useState<string>("");
   const [phoneNumber, setPhoneNumber] = React.useState("");
 
-  // Sex categories from API
   const [sexCategories, setSexCategories] = React.useState<string[]>([]);
 
-  // Validation errors
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
-  // Toast notifications
   const [toasts, setToasts] = React.useState<Toast[]>([]);
   const toastIdRef = React.useRef(0);
 
-  // Change Password OTP modal
   const [showPasswordOTP, setShowPasswordOTP] = React.useState(false);
   const [passwordOtp, setPasswordOtp] = React.useState("");
   const [passwordOtpError, setPasswordOtpError] = React.useState("");
@@ -75,12 +80,13 @@ export default function ProfilePage() {
   const [passwordOtpSending, setPasswordOtpSending] = React.useState(false);
   const [resendCooldown, setResendCooldown] = React.useState(0);
 
-  // Emergency Contact OTP modal
   const [showEmergencyOTP, setShowEmergencyOTP] = React.useState(false);
   const [emergencyOtp, setEmergencyOtp] = React.useState("");
   const [emergencyOtpError, setEmergencyOtpError] = React.useState("");
   const [emergencyOtpLoading, setEmergencyOtpLoading] = React.useState(false);
   const [emergencyOtpSending, setEmergencyOtpSending] = React.useState(false);
+
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const isAdmin = (profile?.roles || []).some((r) => String(r).toLowerCase() === "admin");
   const isDoctor = (user?.roles || []).some((r) => String(r).toLowerCase() === "doctor");
@@ -105,7 +111,6 @@ export default function ProfilePage() {
       try {
         setLoading(true);
 
-        // Fetch sex categories and profile in parallel
         const [profileRes, sexRes] = await Promise.all([
           fetch("/api/users/profile", { cache: "no-store" }),
           fetch("/api/users/sex-category"),
@@ -118,7 +123,7 @@ export default function ProfilePage() {
         try {
           const sexData = await sexRes.json();
           if (Array.isArray(sexData) && sexData.length > 0) categories = sexData;
-        } catch { }
+        } catch {}
 
         if (!mounted) return;
 
@@ -130,7 +135,6 @@ export default function ProfilePage() {
         setOriginalEmergencyEmail(data.emergency_contact_email ?? "");
         setSexCategories(categories);
 
-        // Doctor fields
         if (data.specialization != null) setSpecialization(data.specialization);
         if (data.place_of_practice != null) setPlaceOfPractice(data.place_of_practice);
         if (data.years_of_experience != null) setYearsOfExperience(String(data.years_of_experience));
@@ -158,6 +162,8 @@ export default function ProfilePage() {
     if (!file) return;
     if (!profile?.id) return;
 
+    setSelectedAvatarName(file.name);
+
     if (!file.type.startsWith("image/")) {
       alert("Please upload an image file.");
       return;
@@ -177,7 +183,6 @@ export default function ProfilePage() {
     const errs: Record<string, string> = {};
 
     if (!name.trim()) errs.name = "Name cannot be empty.";
-
     if (age !== "" && Number(age) < 0) errs.age = "Age cannot be negative.";
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -198,7 +203,6 @@ export default function ProfilePage() {
   async function saveProfile() {
     if (saving) return;
     if (!profile?.id) return;
-
     if (!validate()) return;
 
     const emergencyEmailChanged = emergencyEmail !== originalEmergencyEmail;
@@ -209,12 +213,12 @@ export default function ProfilePage() {
       const body: any = {
         name: name.trim(),
       };
+
       if (age !== "") body.age = Number(age);
       if (sex) body.sex = sex;
       if (emergencyEmail) body.emergency_contact_email = emergencyEmail;
       else body.emergency_contact_email = null;
 
-      // Doctor fields (only if doctor role)
       if (isDoctor) {
         if (specialization) body.specialization = specialization;
         if (placeOfPractice) body.place_of_practice = placeOfPractice;
@@ -230,21 +234,26 @@ export default function ProfilePage() {
 
       if (!res.ok) throw new Error(await res.text());
 
-      await refresh(); // update header name
+      await refresh();
 
-      setProfile((p) => (p ? {
-        ...p,
-        name: name.trim(),
-        age: age ? Number(age) : p.age,
-        sex: sex || p.sex,
-        emergency_contact_email: emergencyEmail || null,
-        emergency_contact_isverified: emergencyEmailChanged ? false : p.emergency_contact_isverified,
-      } : p));
+      setProfile((p) =>
+        p
+          ? {
+              ...p,
+              name: name.trim(),
+              age: age ? Number(age) : p.age,
+              sex: sex || p.sex,
+              emergency_contact_email: emergencyEmail || null,
+              emergency_contact_isverified: emergencyEmailChanged
+                ? false
+                : p.emergency_contact_isverified,
+            }
+          : p
+      );
 
       setOriginalEmergencyEmail(emergencyEmail);
       addToast("Profile updated successfully!", "success");
 
-      // If emergency email changed, send re-verification
       if (emergencyEmailChanged && emergencyEmail) {
         try {
           await fetch("/api/users/resend-emergency-verification", {
@@ -263,7 +272,6 @@ export default function ProfilePage() {
     }
   }
 
-  // Change Password Flow
   async function handleRequestPasswordChange() {
     setPasswordOtpSending(true);
     setPasswordOtpError("");
@@ -304,8 +312,6 @@ export default function ProfilePage() {
         throw new Error(data?.message || "Invalid OTP");
       }
       const data = await res.json();
-
-      // Store session token in sessionStorage for the change-password page
       sessionStorage.setItem("hc_password_session", data.sessionToken);
       setShowPasswordOTP(false);
       setPasswordOtp("");
@@ -333,7 +339,6 @@ export default function ProfilePage() {
     }
   }
 
-  // Emergency Contact Verification Flow
   async function handleRequestEmergencyOTP() {
     setEmergencyOtpSending(true);
     setEmergencyOtpError("");
@@ -374,7 +379,7 @@ export default function ProfilePage() {
       setEmergencyOtp("");
       addToast("Emergency contact email verified!", "success");
       await refresh();
-      setProfile((p) => p ? { ...p, emergency_contact_isverified: true } : p);
+      setProfile((p) => (p ? { ...p, emergency_contact_isverified: true } : p));
     } catch (e: any) {
       setEmergencyOtpError(e?.message || "Verification failed.");
     } finally {
@@ -404,7 +409,7 @@ export default function ProfilePage() {
 
   const VerifiedBadge = ({ verified }: { verified?: boolean }) => (
     <span
-      className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
       style={{
         background: verified ? "rgba(56,161,105,0.12)" : "rgba(239,68,68,0.08)",
         color: verified ? "#38a169" : "#e53e3e",
@@ -417,8 +422,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-50 space-y-2" style={{ maxWidth: 380 }}>
+      <div className="fixed right-4 top-4 z-50 space-y-2" style={{ maxWidth: 380 }}>
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -429,9 +433,24 @@ export default function ProfilePage() {
               transition={{ duration: 0.25 }}
               className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
               style={{
-                background: t.type === "success" ? "rgba(56,161,105,0.12)" : t.type === "error" ? "rgba(239,68,68,0.08)" : "rgba(99,102,241,0.08)",
-                borderColor: t.type === "success" ? "#38a169" : t.type === "error" ? "rgba(239,68,68,0.3)" : "rgba(99,102,241,0.3)",
-                color: t.type === "success" ? "#276749" : t.type === "error" ? "#c53030" : "#4338ca",
+                background:
+                  t.type === "success"
+                    ? "rgba(56,161,105,0.12)"
+                    : t.type === "error"
+                    ? "rgba(239,68,68,0.08)"
+                    : "rgba(99,102,241,0.08)",
+                borderColor:
+                  t.type === "success"
+                    ? "#38a169"
+                    : t.type === "error"
+                    ? "rgba(239,68,68,0.3)"
+                    : "rgba(99,102,241,0.3)",
+                color:
+                  t.type === "success"
+                    ? "#276749"
+                    : t.type === "error"
+                    ? "#c53030"
+                    : "#4338ca",
               }}
             >
               {t.type === "success" && <ShieldCheck className="h-4 w-4 flex-shrink-0" />}
@@ -443,17 +462,22 @@ export default function ProfilePage() {
         </AnimatePresence>
       </div>
 
-      {/* Password Change OTP Modal */}
       {showPasswordOTP && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="w-full max-w-sm rounded-2xl border p-8"
             style={{ background: "var(--surface)", borderColor: "var(--borderSoft)" }}
           >
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center rounded-2xl p-3 mb-4 border" style={{ borderColor: "var(--borderSoft)" }}>
+            <div className="mb-6 text-center">
+              <div
+                className="mb-4 inline-flex items-center justify-center rounded-2xl border p-3"
+                style={{ borderColor: "var(--borderSoft)" }}
+              >
                 <KeyRound className="h-8 w-8" style={{ color: "var(--accent)" }} />
               </div>
               <h2 className="text-xl font-semibold">Verify Identity</h2>
@@ -463,8 +487,14 @@ export default function ProfilePage() {
             </div>
 
             {passwordOtpError && (
-              <div className="mb-4 rounded-xl border px-4 py-3 text-sm"
-                style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.2)", color: "#DC2626" }}>
+              <div
+                className="mb-4 rounded-xl border px-4 py-3 text-sm"
+                style={{
+                  background: "rgba(239,68,68,0.08)",
+                  borderColor: "rgba(239,68,68,0.2)",
+                  color: "#DC2626",
+                }}
+              >
                 {passwordOtpError}
               </div>
             )}
@@ -475,7 +505,7 @@ export default function ProfilePage() {
               value={passwordOtp}
               onChange={(e) => setPasswordOtp(e.target.value.replace(/\D/g, ""))}
               placeholder="000000"
-              className="w-full rounded-xl border bg-transparent px-4 py-3 text-center text-2xl font-bold tracking-[8px] outline-none transition-all focus:ring-2 mb-4"
+              className="mb-4 w-full rounded-xl border bg-transparent px-4 py-3 text-center text-2xl font-bold tracking-[8px] outline-none transition-all focus:ring-2"
               style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
               autoFocus
             />
@@ -489,14 +519,28 @@ export default function ProfilePage() {
                 onClick={handleResendPasswordOTP}
                 disabled={resendCooldown > 0}
                 className="text-sm font-medium"
-                style={{ color: resendCooldown > 0 ? "var(--muted)" : "var(--accent)", cursor: resendCooldown > 0 ? "default" : "pointer", background: "none", border: "none" }}
+                style={{
+                  color: resendCooldown > 0 ? "var(--muted)" : "var(--accent)",
+                  cursor: resendCooldown > 0 ? "default" : "pointer",
+                  background: "none",
+                  border: "none",
+                }}
               >
                 {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
               </button>
               <button
-                onClick={() => { setShowPasswordOTP(false); setPasswordOtp(""); setPasswordOtpError(""); }}
+                onClick={() => {
+                  setShowPasswordOTP(false);
+                  setPasswordOtp("");
+                  setPasswordOtpError("");
+                }}
                 className="text-sm"
-                style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  color: "var(--muted)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
@@ -513,9 +557,8 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* Simple badge pill */}
         <span
-          className="px-3 py-1 rounded-full text-xs font-semibold border"
+          className="rounded-full border px-3 py-1 text-xs font-semibold"
           style={{ borderColor: "var(--borderSoft)" }}
         >
           {isAdmin ? "Admin" : isDoctor ? "Doctor" : "Patient"}
@@ -529,10 +572,9 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-[260px_1fr]">
-            {/* Avatar */}
             <div className="space-y-3">
               <div
-                className="rounded-2xl border overflow-hidden grid place-items-center"
+                className="grid place-items-center overflow-hidden rounded-2xl border"
                 style={{
                   borderColor: "var(--borderSoft)",
                   background: "var(--surface)",
@@ -540,7 +582,6 @@ export default function ProfilePage() {
                 }}
               >
                 {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
                   <div className="grid place-items-center gap-2">
@@ -554,26 +595,69 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Profile picture</label>
+
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={(e) => onPickAvatar(e.target.files?.[0])}
-                  className="block w-full text-sm rounded-xl border px-3 py-2"
-                  style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
+                  className="hidden"
                 />
-                <div className="text-xs" style={{ color: "var(--muted)" }}>
-                  Choose an image (max 2MB). It will show in the header immediately.
-                </div>
-              </div>
 
-              <div className="text-xs" style={{ color: "var(--muted)" }}>
-                Stored locally for now (shows in header immediately). Max 2MB.
+                <motion.button
+                  type="button"
+                  whileHover={{ y: -1, scale: 1.01 }}
+                  whileTap={{ scale: 0.985 }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-shadow"
+                  style={{
+                    borderColor: "var(--borderSoft)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  }}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className="rounded-xl border p-2"
+                      style={{
+                        borderColor: "var(--borderSoft)",
+                        background: "rgba(255,255,255,0.04)",
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4" style={{ color: "var(--accent)" }} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">Upload</div>
+                      <div
+                        className="truncate text-xs"
+                        style={{ color: selectedAvatarName === "No file chosen" ? "var(--muted)" : "var(--text)" }}
+                      >
+                        {selectedAvatarName}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="inline-flex flex-shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold"
+                    style={{
+                      background: "var(--accent)",
+                      color: "#fff",
+                    }}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Browse
+                  </div>
+                </motion.button>
+
+                <div className="text-xs" style={{ color: "var(--muted)" }}>
+                  Choose an image (max 2MB).
+                </div>
               </div>
             </div>
 
-            {/* Form */}
             <div className="space-y-4">
-              {/* Display name */}
               <div className="grid gap-2">
                 <label className="text-sm font-semibold">Display name</label>
                 <input
@@ -583,13 +667,13 @@ export default function ProfilePage() {
                   style={errors.name ? errorInputStyle : inputStyle}
                   placeholder="Your name"
                 />
-                {errors.name && <div className="text-xs" style={{ color: "#EF4444" }}>{errors.name}</div>}
-                <div className="text-xs" style={{ color: "var(--muted)" }}>
-                  This is shown in the header and across the app.
-                </div>
+                {errors.name && (
+                  <div className="text-xs" style={{ color: "#EF4444" }}>
+                    {errors.name}
+                  </div>
+                )}
               </div>
 
-              {/* Email (read-only) with verification badge */}
               <div className="grid gap-2">
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-semibold">Email</label>
@@ -603,7 +687,6 @@ export default function ProfilePage() {
                 />
               </div>
 
-              {/* Age & Sex row */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2">
                   <label className="text-sm font-semibold">Age</label>
@@ -617,33 +700,37 @@ export default function ProfilePage() {
                     style={errors.age ? errorInputStyle : inputStyle}
                     placeholder="Your age"
                   />
-                  {errors.age && <div className="text-xs" style={{ color: "#EF4444" }}>{errors.age}</div>}
+                  {errors.age && (
+                    <div className="text-xs" style={{ color: "#EF4444" }}>
+                      {errors.age}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid gap-2">
                   <label className="text-sm font-semibold">Sex</label>
-                  <select
+                  <SoftSelect
                     value={sex}
-                    onChange={(e) => setSex(e.target.value)}
-                    className={`${inputClass} appearance-none cursor-pointer`}
-                    style={inputStyle}
-                  >
-                    <option value="">Select</option>
-                    {sexCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v: string) => setSex(v)}
+                    options={[
+                      { label: "Select", value: "" },
+                      ...sexCategories.map((cat) => ({
+                        label: cat.charAt(0).toUpperCase() + cat.slice(1),
+                        value: cat,
+                      })),
+                    ]}
+                  />
                 </div>
               </div>
 
-              {/* Emergency Contact Email with verification badge */}
               <div className="grid gap-2">
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-semibold">
                     Emergency Contact Email{" "}
-                    <span className="font-normal text-xs" style={{ color: "var(--muted)", opacity: 0.6 }}>
+                    <span
+                      className="text-xs font-normal"
+                      style={{ color: "var(--muted)", opacity: 0.6 }}
+                    >
                       (optional)
                     </span>
                   </label>
@@ -651,6 +738,7 @@ export default function ProfilePage() {
                     <VerifiedBadge verified={profile?.emergency_contact_isverified} />
                   )}
                 </div>
+
                 <input
                   type="email"
                   value={emergencyEmail}
@@ -659,32 +747,43 @@ export default function ProfilePage() {
                   style={errors.emergencyEmail ? errorInputStyle : inputStyle}
                   placeholder="emergency@example.com"
                 />
-                {errors.emergencyEmail && <div className="text-xs" style={{ color: "#EF4444" }}>{errors.emergencyEmail}</div>}
+
+                {errors.emergencyEmail && (
+                  <div className="text-xs" style={{ color: "#EF4444" }}>
+                    {errors.emergencyEmail}
+                  </div>
+                )}
+
                 {emergencyEmail && emergencyEmail !== originalEmergencyEmail && (
                   <div className="text-xs" style={{ color: "var(--accent)" }}>
                     A verification email will be sent to this address when you save.
                   </div>
                 )}
-                {profile?.emergency_contact_email && !profile.emergency_contact_isverified && emergencyEmail === originalEmergencyEmail && (
-                  <div className="mt-1">
-                    <Button
-                      variant="secondary"
-                      onClick={handleRequestEmergencyOTP}
-                      disabled={emergencyOtpSending || saving}
-                      style={{ fontSize: 13, padding: "6px 14px", width: "100%", justifyContent: "center" }}
-                    >
-                      {emergencyOtpSending ? "Sending..." : "Verify Emergency Contact"}
-                    </Button>
-                  </div>
-                )}
+
+                {profile?.emergency_contact_email &&
+                  !profile.emergency_contact_isverified &&
+                  emergencyEmail === originalEmergencyEmail && (
+                    <div className="mt-1">
+                      <Button
+                        variant="secondary"
+                        onClick={handleRequestEmergencyOTP}
+                        disabled={emergencyOtpSending || saving}
+                        style={{
+                          fontSize: 13,
+                          padding: "6px 14px",
+                          width: "100%",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {emergencyOtpSending ? "Sending..." : "Verify Emergency Contact"}
+                      </Button>
+                    </div>
+                  )}
               </div>
 
-              <div className="flex gap-2 flex-wrap">
-                <Button onClick={saveProfile}>
-                  {saving ? "Saving…" : "Save changes"}
-                </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={saveProfile}>{saving ? "Saving…" : "Save changes"}</Button>
 
-                {/* Change Password - only for local provider */}
                 {isLocal && (
                   <Button
                     variant="secondary"
@@ -702,10 +801,9 @@ export default function ProfilePage() {
         )}
       </Card>
 
-      {/* Doctor Details Section - only visible for doctor role */}
       {isDoctor && !loading && (
         <Card>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="mb-4 flex items-center gap-3">
             <div className="rounded-xl p-2" style={{ background: "rgba(16,185,129,0.1)" }}>
               <Stethoscope className="h-5 w-5" style={{ color: "#10B981" }} />
             </div>
@@ -751,7 +849,11 @@ export default function ProfilePage() {
                 style={errors.yearsOfExperience ? errorInputStyle : inputStyle}
                 placeholder="e.g. 5"
               />
-              {errors.yearsOfExperience && <div className="text-xs" style={{ color: "#EF4444" }}>{errors.yearsOfExperience}</div>}
+              {errors.yearsOfExperience && (
+                <div className="text-xs" style={{ color: "#EF4444" }}>
+                  {errors.yearsOfExperience}
+                </div>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -772,7 +874,6 @@ export default function ProfilePage() {
         </Card>
       )}
 
-      {/* Verify Emergency Contact OTP Modal */}
       <AnimatePresence>
         {showEmergencyOTP && (
           <div
@@ -786,9 +887,9 @@ export default function ProfilePage() {
               className="w-full max-w-sm rounded-2xl border p-8"
               style={{ background: "var(--surface)", borderColor: "var(--borderSoft)" }}
             >
-              <div className="text-center mb-6">
+              <div className="mb-6 text-center">
                 <div
-                  className="inline-flex items-center justify-center rounded-2xl p-3 mb-4 border"
+                  className="mb-4 inline-flex items-center justify-center rounded-2xl border p-3"
                   style={{ borderColor: "var(--borderSoft)" }}
                 >
                   <ShieldCheck className="h-8 w-8" style={{ color: "var(--accent)" }} />
@@ -804,7 +905,11 @@ export default function ProfilePage() {
               {emergencyOtpError && (
                 <div
                   className="mb-4 rounded-xl border px-4 py-3 text-sm"
-                  style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.2)", color: "#DC2626" }}
+                  style={{
+                    background: "rgba(239,68,68,0.08)",
+                    borderColor: "rgba(239,68,68,0.2)",
+                    color: "#DC2626",
+                  }}
                 >
                   {emergencyOtpError}
                 </div>
@@ -816,7 +921,7 @@ export default function ProfilePage() {
                 value={emergencyOtp}
                 onChange={(e) => setEmergencyOtp(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
-                className="w-full rounded-xl border bg-transparent px-4 py-3 text-center text-2xl font-bold tracking-[8px] outline-none transition-all focus:ring-2 mb-4"
+                className="mb-4 w-full rounded-xl border bg-transparent px-4 py-3 text-center text-2xl font-bold tracking-[8px] outline-none transition-all focus:ring-2"
                 style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
                 autoFocus
               />
@@ -826,13 +931,13 @@ export default function ProfilePage() {
                 disabled={emergencyOtpLoading}
                 whileHover={emergencyOtpLoading ? {} : { y: -1 }}
                 whileTap={emergencyOtpLoading ? {} : { scale: 0.985 }}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition mb-3"
+                className="mb-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition"
                 style={{ background: "var(--accent)" }}
               >
                 {emergencyOtpLoading ? "Verifying…" : "Verify Code"}
               </motion.button>
 
-              <div className="text-center flex flex-col gap-2 mt-4">
+              <div className="mt-4 flex flex-col gap-2 text-center">
                 <button
                   onClick={handleResendEmergencyOTP}
                   disabled={resendCooldown > 0}
@@ -847,9 +952,17 @@ export default function ProfilePage() {
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
                 </button>
                 <button
-                  onClick={() => { setShowEmergencyOTP(false); setEmergencyOtp(""); }}
+                  onClick={() => {
+                    setShowEmergencyOTP(false);
+                    setEmergencyOtp("");
+                  }}
                   className="text-sm font-medium transition-colors"
-                  style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer" }}
+                  style={{
+                    color: "var(--muted)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel
                 </button>

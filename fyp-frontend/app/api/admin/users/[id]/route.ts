@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ type GateResult =
   | { ok: true; backend: string }
   | { ok: false; backend: string; status: number; error: string };
 
-async function requireAdmin(req: Request): Promise<GateResult> {
+async function requireAdmin(req: NextRequest): Promise<GateResult> {
   const backend = process.env.BACKEND_URL || "";
 
   if (!backend) {
@@ -46,11 +46,14 @@ function candidatesForUser(base: string, id: string) {
   ];
 }
 
-export async function PATCH(req: Request, ctx: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   const gate = await requireAdmin(req);
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
-  const { id } = ctx.params;
+  const { id } = await ctx.params;
   const bodyText = await req.text();
 
   const candidates = candidatesForUser(gate.backend, id);
@@ -93,11 +96,14 @@ export async function PATCH(req: Request, ctx: { params: { id: string } }) {
   );
 }
 
-export async function DELETE(req: Request, ctx: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
   const gate = await requireAdmin(req);
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
-  const { id } = ctx.params;
+  const { id } = await ctx.params;
 
   const candidates = candidatesForUser(gate.backend, id);
   const errors: any[] = [];
