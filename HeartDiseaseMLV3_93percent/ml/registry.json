@@ -1,7 +1,7 @@
 {
   "tasks": {
     "heart_disease": {
-      "active": "HeartDiseaseMLV3_93percent\\ml\\tasks\\heart_disease\\artifact_v1_cleveland.pkl"
+      "active": "ml\\tasks\\heart_disease\\artifact_v1_cleveland.pkl"
     }
   }
 }
