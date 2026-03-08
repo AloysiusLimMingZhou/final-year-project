@@ -85,14 +85,14 @@ npx prisma db seed
 (1st terminal: 
 ```bash
 cd fyp-frontend
-npm run dev (The server will run on http://localhost:8080)
+npm run dev
 ```
 )
 2. Run the backend 
 (2nd terminal: 
 ```bash
 cd fyp-backend
-npm run start:dev (The server will run on http://localhost:3000)
+npm run start:dev
 ```
 )
 3. Run the machine learning models 
@@ -100,7 +100,7 @@ npm run start:dev (The server will run on http://localhost:3000)
 ```bash
 cd HeartDiseaseMLV3_93percent
 ./.venv/Scripts/activate (skip this if in virtual environment already)
-uvicorn service.api:app --reload --port 8002 (The server will run on http://localhost:8002)
+uvicorn service.api:app --reload --port 8002
 ```
 )
 4. Run the RAG models
@@ -109,7 +109,7 @@ uvicorn service.api:app --reload --port 8002 (The server will run on http://loca
 cd RAGFinalYear
 ./.venv/Scripts/activate (skip this if in virtual environment already)
 python RAGMedicalChatbot.py
-uvicorn server:app --reload --port 8001 (The server will run on http://localhost:8001)
+uvicorn server:app --reload --port 8001
 ```
 )
 
