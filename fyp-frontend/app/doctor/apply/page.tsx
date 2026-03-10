@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Stethoscope, ChevronLeft, Upload, AlertTriangle, X } from "lucide-react";
+import { Stethoscope, ChevronLeft, Upload, AlertTriangle, X, ShieldAlert, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 export default function DoctorApply() {
     const { user, loading: authLoading } = useAuth();
@@ -14,6 +14,7 @@ export default function DoctorApply() {
     const [typeOfRegistrations, setTypeOfRegistrations] = useState<string[]>([]);
     const [fileName, setFileName] = useState<string>("");
     const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+    const [showFileWarning, setShowFileWarning] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
     const router = useRouter();
@@ -36,6 +37,58 @@ export default function DoctorApply() {
 
     if (authLoading) return <div className="py-10 text-sm text-center" style={{ color: "var(--hc-muted)" }}>Loading…</div>;
 
+    // --- Status guard: if user already has a doctor application, show status ---
+    if (user?.doctor_status) {
+        const statusConfig: Record<string, { icon: React.ReactNode; title: string; description: string; color: string }> = {
+            pending: {
+                icon: <Clock className="h-8 w-8" style={{ color: "#F59E0B" }} />,
+                title: "Application Pending",
+                description: "Your doctor application is currently under review. You will be notified once it has been processed.",
+                color: "rgba(245,158,11,0.1)",
+            },
+            approved: {
+                icon: <CheckCircle2 className="h-8 w-8" style={{ color: "#10B981" }} />,
+                title: "Already Approved",
+                description: "You are already an approved doctor. You can publish blog posts and access doctor features.",
+                color: "rgba(16,185,129,0.1)",
+            },
+            rejected: {
+                icon: <XCircle className="h-8 w-8" style={{ color: "#EF4444" }} />,
+                title: "Application Rejected",
+                description: "Your doctor application was rejected. You cannot submit another application.",
+                color: "rgba(239,68,68,0.1)",
+            },
+            revoked: {
+                icon: <ShieldAlert className="h-8 w-8" style={{ color: "#EF4444" }} />,
+                title: "Doctor Status Revoked",
+                description: "Your doctor status has been revoked by an administrator. You cannot re-apply.",
+                color: "rgba(239,68,68,0.1)",
+            },
+        };
+
+        const cfg = statusConfig[user.doctor_status] ?? statusConfig.pending;
+
+        return (
+            <div className="space-y-4 max-w-2xl mx-auto">
+                <Button variant="secondary" onClick={() => router.push("/dashboard")} iconLeft={<ChevronLeft className="h-4 w-4" />}>
+                    Back to Dashboard
+                </Button>
+                <Card title="Doctor Application">
+                    <div className="flex flex-col items-center gap-4 py-8 text-center">
+                        <div className="rounded-2xl p-4 border" style={{ borderColor: "var(--hc-border)", background: cfg.color }}>
+                            {cfg.icon}
+                        </div>
+                        <h3 className="text-lg font-semibold" style={{ color: "var(--hc-text)" }}>{cfg.title}</h3>
+                        <p className="text-sm max-w-md" style={{ color: "var(--hc-muted)" }}>{cfg.description}</p>
+                        <Button variant="secondary" onClick={() => router.push("/dashboard")}>
+                            Return to Dashboard
+                        </Button>
+                    </div>
+                </Card>
+            </div>
+        );
+    }
+
     function validateForm(formData: FormData): boolean {
         const errors: Record<string, string> = {};
 
@@ -45,6 +98,7 @@ export default function DoctorApply() {
         const yearsOfExperience = formData.get("years_of_experience") as string || "";
         const phoneNumber = (formData.get("phone_number") as string || "").trim();
         const identificationNumber = (formData.get("identification_number") as string || "").trim();
+        const file = formData.get("file") as File | null;
 
         // String fields must contain at least one alphabetic character
         const hasAlpha = /[a-zA-Z]/;
@@ -71,6 +125,13 @@ export default function DoctorApply() {
         // Identification number: reject if it starts with a minus
         if (identificationNumber.startsWith("-")) {
             errors.identification_number = "Identification number cannot be negative.";
+        }
+
+        // PDF license file check
+        if (!file || file.size === 0) {
+            setShowFileWarning(true);
+            setValidationErrors(errors);
+            return false;
         }
 
         setValidationErrors(errors);
@@ -176,6 +237,42 @@ export default function DoctorApply() {
                 </div>
             )}
 
+            {/* PDF Missing Warning Popup */}
+            {showFileWarning && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+                >
+                    <div
+                        className="relative rounded-2xl border p-6 shadow-2xl max-w-md w-full mx-4"
+                        style={{ background: "var(--hc-surface, var(--surface))", borderColor: "var(--hc-border, var(--borderSoft))", color: "var(--hc-text, var(--text))" }}
+                    >
+                        <button
+                            onClick={() => setShowFileWarning(false)}
+                            className="absolute top-3 right-3 p-1 rounded-lg transition-colors hover:bg-black/10"
+                        >
+                            <X className="h-4 w-4" style={{ color: "var(--hc-muted, var(--muted))" }} />
+                        </button>
+                        <div className="flex flex-col items-center gap-4 text-center">
+                            <div
+                                className="rounded-2xl p-3 border"
+                                style={{ borderColor: "var(--hc-border, var(--borderSoft))", background: "rgba(239,68,68,0.1)" }}
+                            >
+                                <AlertTriangle className="h-8 w-8" style={{ color: "#EF4444" }} />
+                            </div>
+                            <h3 className="text-lg font-semibold">License PDF Required</h3>
+                            <p className="text-sm" style={{ color: "var(--hc-muted, var(--muted))" }}>
+                                Please upload your doctor license as a PDF file before submitting your application.
+                                This document is required for verification.
+                            </p>
+                            <Button onClick={() => setShowFileWarning(false)}>
+                                OK, I&apos;ll Upload
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Button variant="secondary" onClick={() => router.push("/dashboard")} iconLeft={<ChevronLeft className="h-4 w-4" />}>
                 Back to Dashboard
             </Button>
@@ -202,7 +299,7 @@ export default function DoctorApply() {
                     <div className="grid gap-4 sm:grid-cols-2">
                         {fields.map(({ name, label, type, placeholder }) => (
                             <div key={name} className="space-y-1.5">
-                                <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>{label}</label>
+                                <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>{label} <span style={{ color: "#EF4444" }}>*</span></label>
                                 <input
                                     className={inputCls}
                                     style={validationErrors[name] ? errorStyle : inputStyle}
@@ -222,7 +319,7 @@ export default function DoctorApply() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Type of Registration</label>
+                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Type of Registration <span style={{ color: "#EF4444" }}>*</span></label>
                         <select name="type_of_registration" className={inputCls} style={inputStyle} required>
                             {typeOfRegistrations.map((r) => (
                                 <option key={r} value={r}>{r}</option>
@@ -232,7 +329,7 @@ export default function DoctorApply() {
 
                     {/* File upload */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Doctor License (PDF)</label>
+                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Doctor License (PDF) <span style={{ color: "#EF4444" }}>*</span></label>
                         <label
                             className="flex flex-col items-center gap-2 cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition hover:bg-blue-50"
                             style={{ borderColor: "var(--hc-border)" }}
@@ -246,8 +343,10 @@ export default function DoctorApply() {
                                 name="file"
                                 accept=".pdf"
                                 className="hidden"
-                                required
-                                onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
+                                onChange={(e) => {
+                                    setFileName(e.target.files?.[0]?.name || "");
+                                    setShowFileWarning(false);
+                                }}
                             />
                         </label>
                     </div>

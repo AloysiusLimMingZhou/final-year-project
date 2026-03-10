@@ -126,19 +126,6 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (!loading && !user) router.push("/login");
-  }, [loading, user, router]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" } });
-      router.push("/login");
-    } catch (err) {
-      console.error("Failed to logout", err);
-    }
-  };
-
   const exportToCSV = () => {
     if (tableHistory.length === 0) return;
 

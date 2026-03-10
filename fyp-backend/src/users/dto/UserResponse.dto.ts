@@ -78,4 +78,8 @@ export class UserResponseDto {
   @IsString()
   @IsOptional()
   identification_number?: string;
+
+  @IsString()
+  @IsOptional()
+  doctor_status?: string;
 }

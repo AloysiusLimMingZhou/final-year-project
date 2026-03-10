@@ -4,8 +4,9 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { HeartPulse, Mail, Lock, User, Calendar, Users, ShieldPlus, Eye, EyeOff, Palette, ShieldCheck } from "lucide-react";
+import { HeartPulse, Mail, Lock, User, Calendar, Users, ShieldPlus, Eye, EyeOff, Palette, ShieldCheck, Info } from "lucide-react";
 import { useTheme, THEMES } from "../context/ThemeContext";
+import SoftSelect from "../components/ui/Select";
 
 type VerifyStep = "none" | "user-otp" | "done";
 
@@ -59,7 +60,7 @@ export default function Register() {
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
         const age = formData.get("age") as string;
-        const sex = formData.get("sex") as string;
+        const sex = sexCategory;
         const emergency_contact_email = formData.get("emergency_contact_email") as string;
 
         // Email regex validation
@@ -413,26 +414,15 @@ export default function Register() {
                                     Sex
                                 </label>
                                 <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                        <Users className="h-4 w-4" style={{ color: "var(--hc-muted)" }} />
-                                    </div>
-                                    <select
-                                        id="register-sex"
+                                    <FieldSelect
                                         value={sexCategory}
-                                        onChange={(e) => setSexCategory(e.target.value)}
-                                        name="sex"
-                                        className="w-full rounded-xl border bg-transparent pl-10 pr-4 py-2.5 text-sm outline-none transition-all focus:ring-2 appearance-none cursor-pointer"
-                                        style={inputStyle}
-                                        required
-                                    >
-                                        <option value="">Select</option>
-                                        {sexCategories &&
-                                            sexCategories.map((category) => (
-                                                <option key={category} value={category}>
-                                                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                                                </option>
-                                            ))}
-                                    </select>
+                                        onChange={(v: string) => setSexCategory(v)}
+                                        options={sexCategories.map((cat) => ({
+                                            label: cat.charAt(0).toUpperCase() + cat.slice(1),
+                                            value: cat
+                                        }))}
+                                        leftIcon={<Users className="h-4 w-4" />}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -571,5 +561,52 @@ export default function Register() {
                 </motion.div>
             </motion.div>
         </div>
+    );
+}
+function FieldSelect({
+    label,
+    value,
+    onChange,
+    options,
+    description,
+    leftIcon,
+}: {
+    label?: string;
+    value: string;
+    onChange: (v: string) => void;
+    options: { label: string; value: string }[];
+    description?: string;
+    leftIcon?: React.ReactNode;
+}) {
+    return (
+        <label className="block w-full">
+            {label && (
+                <div className="mb-1 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
+                    {label}
+                    {description && (
+                        <div className="group relative flex cursor-help items-center">
+                            <Info className="h-3.5 w-3.5" />
+                            <div
+                                className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 whitespace-pre-wrap rounded-xl border p-2.5 text-xs font-normal leading-relaxed opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                                style={{
+                                    background: "var(--surface)",
+                                    borderColor: "var(--borderSoft)",
+                                    color: "var(--text)",
+                                }}
+                            >
+                                {description}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <SoftSelect
+                value={value}
+                onChange={onChange}
+                options={options}
+                leftIcon={leftIcon}
+            />
+        </label>
     );
 }

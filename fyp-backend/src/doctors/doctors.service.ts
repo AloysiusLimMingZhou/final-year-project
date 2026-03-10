@@ -14,7 +14,13 @@ export class DoctorsService {
 
     const existingDoctor = await this.prisma.doctors.findUnique({ where: { user_id: BigInt(userId) } })
     if (existingDoctor) {
-      throw new ConflictException('You can only submit a doctor verification application!')
+      const statusMessages: Record<string, string> = {
+        pending: 'Your doctor application is currently pending review.',
+        approved: 'You are already an approved doctor.',
+        rejected: 'Your doctor application was rejected. You cannot re-apply.',
+        revoked: 'Your doctor status has been revoked. You cannot re-apply.',
+      };
+      throw new ConflictException(statusMessages[existingDoctor.status] || 'You have already submitted a doctor application.');
     }
 
     const doctor = await this.prisma.doctors.create({

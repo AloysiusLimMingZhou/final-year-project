@@ -50,15 +50,6 @@ export default function ViewPostForReview() {
         else alert(await res.text());
     };
 
-    const deletePost = async () => {
-        if (!confirm(`Delete this post "${post?.title}"?\n\nThis cannot be undone.`)) return;
-        setBusy("delete");
-        const res = await fetch(`/api/posts/${params.post}`, { method: "DELETE" });
-        setBusy(null);
-        if (res.ok) router.push("/admin/post-review");
-        else alert(await res.text());
-    };
-
     if (authLoading || loading) {
         return <div className="py-10 text-sm text-center" style={{ color: "var(--hc-muted)" }}>Loading…</div>;
     }
@@ -143,14 +134,6 @@ export default function ViewPostForReview() {
                     >
                         <XCircle className="h-4 w-4" />
                         {busy === "reject" ? "Rejecting…" : "Reject Post"}
-                    </button>
-                    <button
-                        onClick={deletePost}
-                        disabled={!!busy}
-                        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-red-500 text-white transition hover:bg-red-600 disabled:opacity-60"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        {busy === "delete" ? "Deleting…" : "Delete Post"}
                     </button>
                     <Button variant="secondary" onClick={() => router.push("/admin/post-review")}>
                         Cancel

@@ -28,6 +28,7 @@ export class UsersService {
       emergency_contact_isverified: user.emergency_contact_isverified ?? false,
       created_at: user.created_at,
       updated_at: user.updated_at,
+      doctor_status: user.doctors_doctors_user_idTousers?.status ?? undefined,
     };
   }
 
@@ -41,7 +42,8 @@ export class UsersService {
           include: {
             roles: true
           }
-        }
+        },
+        doctors_doctors_user_idTousers: true
       }
     });
     if (!user) throw new NotFoundException('User is not found!');

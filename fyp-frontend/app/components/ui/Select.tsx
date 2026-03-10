@@ -37,7 +37,7 @@ export default function SoftSelect({ value, onChange, options, leftIcon }: SoftS
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.985 }}
         transition={{ type: "tween", duration: 0.12, ease: "easeOut" }}
-        className="w-full rounded-xl border bg-transparent px-3 py-2 text-left text-sm font-semibold"
+        className="w-full rounded-xl border bg-transparent px-3 py-2.5 text-left text-sm font-semibold"
         style={{ borderColor: "var(--borderSoft)", color: "var(--text)" }}
       >
         <span className="flex items-center justify-between gap-2">

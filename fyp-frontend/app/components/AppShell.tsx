@@ -256,7 +256,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                           </button>
                         ) : null}
 
-                        {!isDoctor && !isAdmin ? (
+                        {!isDoctor && !isAdmin && !user?.doctor_status ? (
                           <button
                             onClick={() => router.push("/doctor/apply")}
                             className="w-full px-4 py-3 text-left text-sm font-semibold flex items-center gap-2 border-t"
@@ -376,7 +376,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         </Button>
                       </motion.div>
 
-                      {!isDoctor && !isAdmin ? (
+                      {!isDoctor && !isAdmin && !user?.doctor_status ? (
                         <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="mt-2 text-left">
                           <Button
                             variant="secondary"

@@ -166,6 +166,111 @@ function generateDiagnosisHTML(user_name: string, diagnosis: any): string {
     `;
 }
 
+function generateEmergencyHTML(user_name: string, diagnosis: any): string {
+  const riskScore: number = Number(diagnosis?.risk_score ?? 0);
+  const style = getBandStyle(riskScore);
+  const scorePercent = Math.round(riskScore * 100);
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${style.headline}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f7fafc;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7fafc;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:${style.bgColor};border-radius:12px;border:2px solid ${style.borderColor};overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:${style.borderColor};padding:28px 32px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;">
+                HealthConnect
+              </h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${style.headline}</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 16px;font-size:15px;color:#2d3748;">
+                Hello,
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;color:#4a5568;">
+                This is an automated report from <strong>HealthConnect</strong>. Your person in charge, <strong>${user_name}</strong>, is diagnosed with a <strong>${style.label.toLowerCase()}</strong> risk of heart disease. Their latest screening result is available below.
+              </p>
+
+              <!-- Risk Badge -->
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td style="background-color:${style.badgeBg};color:${style.badgeText};padding:10px 22px;border-radius:50px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                    ${style.label} Risk
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Details Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <table width="100%" cellpadding="6" cellspacing="0">
+                      <tr>
+                        <td style="font-size:13px;color:#718096;width:140px;">Patient Name</td>
+                        <td style="font-size:13px;color:#2d3748;font-weight:600;">${user_name}</td>
+                      </tr>
+                      <tr style="background-color:#f7fafc;">
+                        <td style="font-size:13px;color:#718096;">Risk Score</td>
+                        <td style="font-size:13px;color:${style.textColor};font-weight:700;">${scorePercent}%</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:13px;color:#718096;">Risk Band</td>
+                        <td style="font-size:13px;color:${style.textColor};font-weight:700;">${style.label}</td>
+                      </tr>
+                      <tr style="background-color:#f7fafc;">
+                        <td style="font-size:13px;color:#718096;">Date &amp; Time</td>
+                        <td style="font-size:13px;color:#2d3748;">${new Date().toLocaleString()}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Call to action -->
+              <p style="margin:0 0 24px;font-size:14px;color:#4a5568;background-color:#ffffff;border-left:4px solid ${style.borderColor};padding:14px 16px;border-radius:4px;">
+                ${style.callToAction.replace('Your result', 'Their result')}
+              </p>
+
+              <!-- Disclaimer -->
+              <p style="margin:0;font-size:12px;color:#a0aec0;font-style:italic;">
+                ⚠️ Educational estimate only. This is <strong>not</strong> a medical diagnosis. Always consult a qualified healthcare professional for medical advice.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px;background-color:#edf2f7;border-top:1px solid #e2e8f0;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#718096;">
+                © ${new Date().getFullYear()} HealthConnect · This email was sent to you because you are listed as an emergency contact.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+}
+
+
 @Injectable()
 export class EmailService {
   constructor(
@@ -246,7 +351,72 @@ export class EmailService {
     await this.mailerService.sendMail({
       to: user.emergency_contact_email,
       subject: 'Your Person in Care Heart Prediction Report – HealthConnect',
-      html: generateDiagnosisHTML(user.name, diagnosis)
+      html: generateEmergencyHTML(user.name, diagnosis)
+    });
+  }
+
+  async sendDoctorStatusEmail(email: string, name: string, status: 'approved' | 'rejected' | 'revoked') {
+    let subject = "Update on Your Doctor Application – HealthConnect";
+    let title = "Application Update";
+    let messageHtml = "";
+    let headerBgColor = "";
+
+    if (status === 'approved') {
+      subject = "Update on Your Doctor Application – HealthConnect";
+      title = "Application Approved";
+      messageHtml = `We are pleased to inform you that your application for the doctor role on HealthConnect has been approved. You can now access your doctor blogs and features.`;
+      headerBgColor = "#38a169";
+    } else if (status === 'rejected') {
+      subject = "Update on Your Doctor Application – HealthConnect";
+      title = "Application Rejected";
+      messageHtml = `We have reviewed your application for the doctor role on HealthConnect. Unfortunately, we are unable to approve your application at this time due to incomplete or false information provided.`;
+      headerBgColor = "#e53e3e";
+    } else if (status === 'revoked') {
+      subject = "Update on Your Doctor Application – HealthConnect";
+      title = "Status Revoked";
+      messageHtml = `This email is to notify you that your doctor status on HealthConnect has been revoked by an administrator due to violation of HealthConnect Guidelines. You will no longer have access to doctor-specific features.`;
+      headerBgColor = "#e53e3e";
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${title}</title>
+      </head>
+      <body style="margin:0;padding:0;background-color:#f7fafc;font-family:'Segoe UI',Arial,sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f7fafc;padding:40px 0;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+                <tr>
+                  <td style="background-color:${headerBgColor};padding:28px 32px;text-align:center;">
+                    <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;">HealthConnect</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:32px;">
+                    <p style="margin:0 0 16px;font-size:15px;color:#2d3748;">Hello <strong>${name}</strong>,</p>
+                    <p style="margin:0 0 24px;font-size:15px;color:#4a5568;">${messageHtml}</p>
+                    <p style="margin:0 0 16px;font-size:15px;color:#4a5568;">If you believe this is an error or have any questions, please contact our support team.</p>
+                    <br/>
+                    <p style="margin:0;font-size:15px;color:#4a5568;">Regards,<br/>The HealthConnect Admin Team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject,
+      html: htmlContent
     });
   }
 }

@@ -74,10 +74,10 @@ export class PostsController {
   }
 
   @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'doctor')
   @Delete(':id/delete-post')
-  remove(@Param('id', ParseBigIntPipe) id: bigint): Promise<void> {
-    return this.postsService.deletePostById(id.toString());
+  remove(@CurrentUser() user, @Param('id', ParseBigIntPipe) id: bigint): Promise<void> {
+    return this.postsService.deletePostById(id.toString(), user);
   }
 
   @UseGuards(JwtAuthGuard, IsVerifiedGuard, RolesGuard)

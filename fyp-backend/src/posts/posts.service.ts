@@ -129,8 +129,16 @@ export class PostsService {
     return this.toUpdatePostDto(updatedPost);
   }
 
-  async deletePostById(id: string): Promise<void> {
+  async deletePostById(id: string, user: any): Promise<void> {
     const post: blog_posts = await this.findOne({ id: BigInt(id) });
+
+    // Admins can delete any post; doctors can only delete their own
+    const isAdmin = user.roles?.includes('admin');
+    const isOwner = post.user_id.toString() === user.id.toString();
+
+    if (!isAdmin && !isOwner) {
+      throw new NotFoundException('Post not found!');
+    }
 
     try {
       if (post) {

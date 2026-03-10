@@ -23,7 +23,7 @@ async def predict_batch(file: UploadFile = File(...)):
         df_in = df[features].copy()
         probs = model.predict_proba(df_in)[:, 1]
         out = df.copy()
-        out["probability"] = probs
+        out["Risk Score (%)"] = (probs*100).round(2)
 
         # stream back as CSV
         buf = io.StringIO()

@@ -7,7 +7,7 @@ import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Activity, Beaker, FileSpreadsheet, Upload, ArrowLeft } from "lucide-react";
 
-const API = "http://localhost:8002";
+const API = process.env.NEXT_PUBLIC_ML_API_ENDPOINT;
 
 /**
  * The backend sometimes returns a JSON-encoded string where newlines are
@@ -72,7 +72,6 @@ export default function MLBatchPage() {
                 method: "POST",
                 body: formData,
             });
-
             if (!response.ok) {
                 throw new Error(`Server returned ${response.status}`);
             }

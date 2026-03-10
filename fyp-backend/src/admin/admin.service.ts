@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from 'prisma/prisma.service';
 import { S3Service } from 'src/common/s3.service';
+import { EmailService } from '../common/email.service';
 
 @Injectable()
 export class AdminService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly s3Service: S3Service
+        private readonly s3Service: S3Service,
+        private readonly emailService: EmailService
     ) { }
 
     async findAllDoctors(queries: {
@@ -65,7 +67,8 @@ export class AdminService {
 
     async revokeDoctorById(doctor_id: string) {
         const doctor = await this.prisma.doctors.findUnique({
-            where: { user_id: BigInt(doctor_id) }
+            where: { user_id: BigInt(doctor_id) },
+            include: { users_doctors_user_idTousers: true }
         });
         if (!doctor) throw new NotFoundException('Doctor not found!');
 
@@ -84,6 +87,14 @@ export class AdminService {
                     role_id: doctorRole.id
                 }
             });
+        }
+
+        if (doctor.users_doctors_user_idTousers?.email && doctor.users_doctors_user_idTousers?.name) {
+            await this.emailService.sendDoctorStatusEmail(
+                doctor.users_doctors_user_idTousers.email,
+                doctor.users_doctors_user_idTousers.name,
+                'revoked'
+            );
         }
     }
 
@@ -143,6 +154,13 @@ export class AdminService {
     }
 
     async approveDoctorReview(adminID: string, doctorID: string) {
+        const doctor = await this.prisma.doctors.findUnique({
+            where: { user_id: BigInt(doctorID) },
+            include: { users_doctors_user_idTousers: true }
+        });
+
+        if (!doctor) throw new NotFoundException('Doctor not found!');
+
         await this.prisma.doctors.update({
             where: {
                 user_id: BigInt(doctorID)
@@ -152,7 +170,7 @@ export class AdminService {
                 reviewed_by: BigInt(adminID),
                 reviewed_at: new Date()
             }
-        })
+        });
 
         const doctorRole: any = await this.prisma.roles.findFirst({
             where: { name: "doctor" }
@@ -189,9 +207,24 @@ export class AdminService {
                 }
             })
         }
+
+        if (doctor.users_doctors_user_idTousers?.email && doctor.users_doctors_user_idTousers?.name) {
+            await this.emailService.sendDoctorStatusEmail(
+                doctor.users_doctors_user_idTousers.email,
+                doctor.users_doctors_user_idTousers.name,
+                'approved'
+            );
+        }
     }
 
     async rejectDoctorReview(adminID: string, doctorID: string) {
+        const doctor = await this.prisma.doctors.findUnique({
+            where: { user_id: BigInt(doctorID) },
+            include: { users_doctors_user_idTousers: true }
+        });
+
+        if (!doctor) throw new NotFoundException('Doctor not found!');
+
         await this.prisma.doctors.update({
             where: {
                 user_id: BigInt(doctorID)
@@ -201,6 +234,14 @@ export class AdminService {
                 reviewed_by: BigInt(adminID),
                 reviewed_at: new Date()
             }
-        })
+        });
+
+        if (doctor.users_doctors_user_idTousers?.email && doctor.users_doctors_user_idTousers?.name) {
+            await this.emailService.sendDoctorStatusEmail(
+                doctor.users_doctors_user_idTousers.email,
+                doctor.users_doctors_user_idTousers.name,
+                'rejected'
+            );
+        }
     }
 }

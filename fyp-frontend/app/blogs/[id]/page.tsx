@@ -76,7 +76,7 @@ export default function BlogDetailPage() {
   const handleDelete = async () => {
     if (!confirm(`Delete blog "${post.title}"?\n\nThis cannot be undone.`)) return;
     setDeleting(true);
-    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/posts/${post.id}/delete-post`, { method: "DELETE" });
     setDeleting(false);
     if (res.ok) router.push("/blogs");
     else alert(await res.text());
@@ -92,13 +92,6 @@ export default function BlogDetailPage() {
         >
           Back to blogs
         </Button>
-
-        {isAuthorDoctor && (
-          <Button variant="secondary" onClick={() => router.push(`/blogs/edit/${post.id}`)}
-            iconLeft={<Pencil className="h-4 w-4" />}>
-            Edit
-          </Button>
-        )}
 
         {(isAdmin || isAuthorDoctor) && (
           <button

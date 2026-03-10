@@ -5,13 +5,15 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { BookOpen, ChevronLeft } from "lucide-react";
+import { BookOpen, ChevronLeft, Info } from "lucide-react";
+import SoftSelect from "@/app/components/ui/Select";
 
 export default function CreateBlog() {
     const { user, loading: authLoading } = useAuth();
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [categories, setCategories] = useState<string[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>("");
     const router = useRouter();
 
     useEffect(() => {
@@ -22,9 +24,13 @@ export default function CreateBlog() {
         try {
             const response = await fetch("/api/posts/category");
             const data = await response.json();
-            setCategories(Array.isArray(data) ? data : []);
+            const fetchedCategories = Array.isArray(data) ? data : [];
+            setCategories(fetchedCategories);
+            if (fetchedCategories.length > 0) setSelectedCategory(fetchedCategories[0]);
         } catch {
-            setCategories(["Heart", "Lifestyle", "Nutrition", "Fitness", "General"]);
+            const fallbackCategories = ["Heart", "Lifestyle", "Nutrition", "Fitness", "General"];
+            setCategories(fallbackCategories);
+            setSelectedCategory(fallbackCategories[0]);
         }
     };
 
@@ -49,7 +55,7 @@ export default function CreateBlog() {
         const formData = new FormData(e.currentTarget);
         const title = formData.get("title") as string;
         const content = formData.get("content") as string;
-        const category = formData.get("category") as string;
+        const category = selectedCategory;
 
         try {
             const response = await fetch("/api/posts/create-post", {
@@ -111,18 +117,15 @@ export default function CreateBlog() {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Category</label>
-                        <select
-                            name="category"
-                            className={inputCls}
-                            style={inputStyle}
-                        >
-                            {categories.map((cat) => (
-                                <option key={cat} value={cat}>
-                                    {cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()}
-                                </option>
-                            ))}
-                        </select>
+                        <FieldSelect
+                            label="Category"
+                            value={selectedCategory}
+                            onChange={(v) => setSelectedCategory(v)}
+                            options={categories.map((cat) => ({
+                                label: cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase(),
+                                value: cat,
+                            }))}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
@@ -147,5 +150,48 @@ export default function CreateBlog() {
                 </form>
             </Card>
         </div>
+    );
+}
+
+function FieldSelect({
+    label,
+    value,
+    onChange,
+    options,
+    description,
+}: {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    options: { label: string; value: string }[];
+    description?: string;
+}) {
+    return (
+        <label className="block">
+            <div className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--hc-text)" }}>
+                {label}
+                {description && (
+                    <div className="group relative flex cursor-help items-center">
+                        <Info className="h-3.5 w-3.5" style={{ color: "var(--muted)" }} />
+                        <div
+                            className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 whitespace-pre-wrap rounded-xl border p-2.5 text-xs font-normal leading-relaxed opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                            style={{
+                                background: "var(--surface)",
+                                borderColor: "var(--borderSoft)",
+                                color: "var(--text)",
+                            }}
+                        >
+                            {description}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <SoftSelect
+                value={value}
+                onChange={onChange}
+                options={options}
+            />
+        </label>
     );
 }

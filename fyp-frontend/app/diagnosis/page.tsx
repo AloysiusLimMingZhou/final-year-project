@@ -36,7 +36,7 @@ export default function DiagnosisPage() {
 
   // Backend DTO fields (age & sex fetched from profile)
   const [form, setForm] = React.useState({
-    cp: 0,
+    cp: 1,
     trestbps: 120,
     chol: 200,
     fbs: 0,
@@ -46,7 +46,7 @@ export default function DiagnosisPage() {
     oldpeak: 0.0,
     slope: 1,
     ca: 0,
-    thal: 2,
+    thal: 3,
   });
 
   React.useEffect(() => {
@@ -270,10 +270,10 @@ export default function DiagnosisPage() {
                   value={form.cp}
                   onChange={(v) => setForm({ ...form, cp: v })}
                   options={[
-                    { label: "0", value: 0 },
                     { label: "1", value: 1 },
                     { label: "2", value: 2 },
                     { label: "3", value: 3 },
+                    { label: "4", value: 4 },
                   ]}
                   description={
                     "chest pain type\n-- Value 1: typical angina\n-- Value 2: atypical angina\n-- Value 3: non-anginal pain\n-- Value 4: asymptomatic"
@@ -362,9 +362,9 @@ export default function DiagnosisPage() {
                   value={form.slope}
                   onChange={(v) => setForm({ ...form, slope: v })}
                   options={[
-                    { label: "0", value: 0 },
                     { label: "1", value: 1 },
                     { label: "2", value: 2 },
+                    { label: "3", value: 3 },
                   ]}
                   description={
                     "the slope of the peak exercise ST segment\n-- Value 1: upsloping\n-- Value 2: flat\n-- Value 3: downsloping"
@@ -391,10 +391,9 @@ export default function DiagnosisPage() {
                   value={form.thal}
                   onChange={(v) => setForm({ ...form, thal: v })}
                   options={[
-                    { label: "0", value: 0 },
-                    { label: "1", value: 1 },
-                    { label: "2", value: 2 },
-                    { label: "3", value: 3 },
+                    { label: "3", value: 0 },
+                    { label: "6", value: 1 },
+                    { label: "7", value: 2 },
                   ]}
                   description={"3 = normal\n6 = fixed defect\n7 = reversable defect (Thalassemia)"}
                 />
