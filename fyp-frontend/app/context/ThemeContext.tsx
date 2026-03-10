@@ -27,12 +27,12 @@ export const THEMES: Record<
     },
     sakura: {
         name: "Sakura Light",
-        accent: "#EC4899",
-        bg: "#FFF1F2",
-        surface: "#FFFFFF",
-        text: "#111827",
-        muted: "#6B7280",
-        border: "rgba(236, 72, 153, 0.18)",
+        accent: "#f26f9b",
+        bg: "#FFF5F8",              
+        surface: "#FFFDFE",         
+        text: "#4A2E39",            
+        muted: "#A06A7C",           
+        border: "rgba(244, 143, 177, 0.22)",
     },
     playful: {
         name: "Playful Tech",

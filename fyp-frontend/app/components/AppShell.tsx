@@ -22,6 +22,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Button } from "./ui/Button";
+import { MessageCircle, SendHorizonal } from "lucide-react";
 
 type NavItem = {
   label: string;
@@ -54,6 +55,83 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { themeKey, cycleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
+  const [assistantOpen, setAssistantOpen] = React.useState(false);
+  const [assistantDraft, setAssistantDraft] = React.useState("");
+  const [assistantMsgs, setAssistantMsgs] = React.useState<
+    { role: "user" | "bot"; text: string }[]
+  >([
+    {
+      role: "bot",
+      text: "Hi! I’m your HealthConnect assistant. Ask me anything about your results or next steps.",
+    },
+  ]);
+  const [assistantLoading, setAssistantLoading] = React.useState(false);
+  const assistantScrollerRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const el = assistantScrollerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [assistantMsgs, assistantLoading, assistantOpen]);
+
+  async function sendAssistantMessage(text?: string) {
+    const content = (text ?? assistantDraft).trim();
+    if (!content || assistantLoading) return;
+
+    setAssistantDraft("");
+    setAssistantLoading(true);
+    setAssistantMsgs((m) => [...m, { role: "user", text: content }]);
+
+    try {
+      const res = await fetch("/api/chat/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question: content }),
+      });
+
+      const raw = await res.text();
+      let data: any = null;
+
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        const friendlyError =
+          data?.message ||
+          data?.error ||
+          raw ||
+          "Sorry — I couldn't reach the assistant service.";
+
+        throw new Error(friendlyError);
+      }
+
+      const reply =
+        (data?.answer ?? data?.reply ?? data?.message ?? "").toString().trim() ||
+        "(No response)";
+
+      setAssistantMsgs((m) => [...m, { role: "bot", text: reply }]);
+    } catch (e: any) {
+      const msg =
+        e?.message?.trim() ||
+        "Sorry — I couldn't reach the assistant service.";
+
+      setAssistantMsgs((m) => [
+        ...m,
+        {
+          role: "bot",
+          text: `Sorry — I couldn't reach the assistant service.\n\n${msg}`,
+        },
+      ]);
+    } finally {
+      setAssistantLoading(false);
+    }
+  }
+
   async function logout() {
     await authLogout();
   }
@@ -62,7 +140,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Profile dropdown + avatar (stored in localStorage for now)
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
 
@@ -110,7 +187,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     themeKey === "playful" ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.04)";
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: "var(--hc-bg)", color: "var(--hc-text)" }}>
+    <div
+      className="min-h-screen overflow-x-hidden"
+      style={{ background: "var(--hc-bg)", color: "var(--hc-text)" }}
+    >
       <header
         className="w-full"
         style={{
@@ -120,7 +200,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="mx-auto max-w-[90rem] px-3 py-3 md:px-4">
           <div className="flex items-center justify-between gap-3">
-            {/* Brand */}
             <motion.button
               onClick={() => router.push("/dashboard")}
               whileHover={{
@@ -148,7 +227,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </motion.button>
 
-            {/* Desktop nav */}
             <nav className="hidden lg:flex items-center justify-center gap-1">
               {nav.map((n) => {
                 const active = isActive(n.href);
@@ -177,7 +255,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
 
-            {/* Right actions */}
             <div className="flex items-center gap-2">
               <div className="hidden lg:flex items-center gap-2">
                 <div style={{ width: 180 }}>
@@ -193,7 +270,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   </motion.div>
                 </div>
 
-                {/* Profile menu */}
                 <div className="relative" data-profile-menu>
                   <motion.button
                     whileHover={{ y: -1, backgroundColor: hoverBg }}
@@ -209,7 +285,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       style={{ borderColor: "var(--hc-border)", background: "var(--hc-surface)" }}
                     >
                       {avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
                       ) : (
                         <UserCircle2 className="h-5 w-5" style={{ color: "var(--hc-accent)" }} />
@@ -281,7 +356,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Mobile hamburger */}
               <div className="lg:hidden">
                 <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} transition={{ type: "tween", duration: 0.12 }}>
                   <Button
@@ -296,7 +370,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Mobile drawer */}
           <AnimatePresence>
             {mobileOpen ? (
               <motion.div
@@ -351,7 +424,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         style={{ borderColor: "var(--hc-border)", background: "var(--hc-surface)" }}
                       >
                         {avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
                         ) : (
                           <UserCircle2 className="h-5 w-5" style={{ color: "var(--hc-accent)" }} />
@@ -403,6 +475,161 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto max-w-[90rem] px-3 py-6 md:px-4">{children}</main>
+
+      {/* Floating Assistant */}
+      <div className="fixed bottom-5 right-5 z-[120]">
+        <AnimatePresence>
+          {assistantOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 28, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.96 }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 22,
+                mass: 0.9,
+              }}
+              className="absolute bottom-16 right-0 w-[360px] overflow-hidden rounded-3xl border shadow-xl"
+              style={{
+                background: "var(--hc-surface)",
+                borderColor: "var(--hc-border)",
+              }}
+            >
+              <div
+                className="flex items-center justify-between px-4 py-3"
+                style={{
+                  borderBottom: "1px solid var(--hc-border)",
+                  background: "rgba(100,116,139,0.05)",
+                }}
+              >
+                <span className="text-sm font-semibold">
+                  {themeKey === "sakura" ? "Miku Assistant 🌸" : "Assistant"}
+                </span>
+
+                <motion.button
+                  type="button"
+                  onClick={() => setAssistantOpen(false)}
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.92 }}
+                  className="rounded-xl p-2"
+                  style={{ color: "var(--hc-text)" }}
+                >
+                  <X className="h-4 w-4" />
+                </motion.button>
+              </div>
+
+              <div
+                ref={assistantScrollerRef}
+                className="max-h-[300px] space-y-2 overflow-y-auto px-3 py-3"
+              >
+                {assistantMsgs.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className="max-w-[80%] rounded-2xl border px-3 py-2 text-sm whitespace-pre-wrap"
+                      style={{
+                        borderColor: "var(--hc-border)",
+                        background: m.role === "user" ? "var(--hc-accent)" : "var(--hc-surface)",
+                        color: m.role === "user" ? "#fff" : "var(--hc-text)",
+                      }}
+                    >
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+
+                {assistantLoading && (
+                  <div className="flex justify-start">
+                    {themeKey === "sakura" ? (
+                      <div
+  className="px-3 py-3 text-sm"
+  style={{
+    color: "var(--hc-text)",
+    maxWidth: "80%",
+  }}
+>
+                        <div className="flex items-center gap-2" style={{ color: "var(--hc-muted)" }}>
+                          <span>Miku is thinking...</span>
+                        </div>
+
+                        <div className="mt-2 flex justify-start">
+                          <motion.img
+                            src="/MikuMagicalCure.png"
+                            alt="Miku thinking"
+                            className="h-24 w-auto object-contain pointer-events-none select-none"
+                            animate={{ y: [0, -6, 0], rotate: [0, -1, 1, 0] }}
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className="rounded-2xl border px-3 py-2 text-sm"
+                        style={{
+                          borderColor: "var(--hc-border)",
+                          background: "var(--hc-surface)",
+                          color: "var(--hc-muted)",
+                        }}
+                      >
+                        Typing...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="flex gap-2 p-3"
+                style={{ borderTop: "1px solid var(--hc-border)" }}
+              >
+                <input
+                  value={assistantDraft}
+                  onChange={(e) => setAssistantDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") sendAssistantMessage();
+                  }}
+                  placeholder="Ask the assistant..."
+                  className="w-full rounded-xl border px-3 py-2 text-sm"
+                  style={{
+                    borderColor: "var(--hc-border)",
+                    background: "transparent",
+                    color: "var(--hc-text)",
+                  }}
+                />
+
+                <motion.button
+                  type="button"
+                  onClick={() => sendAssistantMessage()}
+                  whileHover={{ y: -1, scale: 1.03 }}
+                  whileTap={{ scale: 0.94 }}
+                  className="grid min-w-[56px] place-items-center rounded-xl px-3"
+                  style={{ background: "var(--hc-accent)", color: "#fff" }}
+                >
+                  <SendHorizonal className="h-4 w-4" />
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          type="button"
+          onClick={() => setAssistantOpen((v) => !v)}
+          whileHover={{ y: -2, scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.12, ease: "easeOut" }}
+          className="grid h-14 w-14 place-items-center rounded-full shadow-lg"
+          style={{
+            background: "var(--hc-accent)",
+            color: "#fff",
+          }}
+        >
+          <MessageCircle className="h-6 w-6" />
+        </motion.button>
+      </div>
     </div>
   );
 }

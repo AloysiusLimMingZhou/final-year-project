@@ -422,7 +422,10 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      <div className="fixed right-4 top-4 z-50 space-y-2" style={{ maxWidth: 380 }}>
+      <div
+        className="pointer-events-none fixed right-4 top-24 z-[9999] space-y-2"
+        style={{ maxWidth: 380 }}
+      >
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -431,32 +434,33 @@ export default function ProfilePage() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 60, scale: 0.95 }}
               transition={{ duration: 0.25 }}
-              className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
+              className="pointer-events-auto flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
               style={{
                 background:
                   t.type === "success"
-                    ? "rgba(56,161,105,0.12)"
+                    ? "#F0FDF4"
                     : t.type === "error"
-                    ? "rgba(239,68,68,0.08)"
-                    : "rgba(99,102,241,0.08)",
+                    ? "#FEF2F2"
+                    : "#EEF2FF",
                 borderColor:
                   t.type === "success"
-                    ? "#38a169"
+                    ? "#22C55E"
                     : t.type === "error"
-                    ? "rgba(239,68,68,0.3)"
-                    : "rgba(99,102,241,0.3)",
+                    ? "#EF4444"
+                    : "#6366F1",
                 color:
                   t.type === "success"
-                    ? "#276749"
+                    ? "#166534"
                     : t.type === "error"
-                    ? "#c53030"
-                    : "#4338ca",
+                    ? "#991B1B"
+                    : "#3730A3",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.10)",
               }}
             >
               {t.type === "success" && <ShieldCheck className="h-4 w-4 flex-shrink-0" />}
               {t.type === "error" && <ShieldX className="h-4 w-4 flex-shrink-0" />}
               {t.type === "info" && <Mail className="h-4 w-4 flex-shrink-0" />}
-              {t.message}
+              <span className="truncate">{t.message}</span>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -632,7 +636,12 @@ export default function ProfilePage() {
                       <div className="text-sm font-medium">Upload</div>
                       <div
                         className="truncate text-xs"
-                        style={{ color: selectedAvatarName === "No file chosen" ? "var(--muted)" : "var(--text)" }}
+                        style={{
+                          color:
+                            selectedAvatarName === "No file chosen"
+                              ? "var(--muted)"
+                              : "var(--text)",
+                        }}
                       >
                         {selectedAvatarName}
                       </div>
