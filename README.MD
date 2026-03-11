@@ -77,36 +77,36 @@ npx prisma db seed
 
 # Step 5: Run the application
 1. Run the frontend 
-(1st terminal: 
+(1st terminal: )
 ```bash
 cd frontend
 npm run dev
 ```
-)
+
 2. Run the backend 
-(2nd terminal: 
+(2nd terminal: )
 ```bash
 cd backend
 npm run start:dev
 ```
-)
+
 3. Run the machine learning models 
-(3rd terminal: 
+(3rd terminal: )
 ```bash
 cd ML-Server
 ./.venv/Scripts/activate (skip this if in virtual environment already)
 uvicorn service.api:app --reload --port 8002
 ```
-)
+
 4. Run the RAG models
-(4th terminal: 
+(4th terminal: )
 ```bash
 cd RAG-Server
 ./.venv/Scripts/activate (skip this if in virtual environment already)
 python RAGMedicalChatbot.py
 uvicorn server:app --reload --port 8001
 ```
-)
+
 
 ## Debugging Error
 # Case 1: If you face any database error, run this command for basic debug
