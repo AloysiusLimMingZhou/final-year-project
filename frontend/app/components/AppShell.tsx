@@ -37,6 +37,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout: authLogout } = useAuth();
 
   const hideHeader =
+    pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
     pathname.startsWith("/forgot-password");
