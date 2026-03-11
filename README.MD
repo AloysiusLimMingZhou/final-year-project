@@ -59,15 +59,10 @@ pip install -r requirements.txt
 Before running the services, you must provide the necessary environment configurations, data files, and model weights:
 
 1. **Backend Environment Variables**
-   - Create a `.env` file inside `fyp-backend/` (Refer to the necessary database, JWT, and email SMTP variables).
+   - Create a `.env` file inside `backend/` (Refer to the necessary database, JWT, and email SMTP variables).
 
 2. **RAG Model Environment Variables & Data**
-   - Create a `.env` file inside `RAGFinalYear/` to store your LLM configuration and API keys.
-   - Create a `data/` folder inside `RAGFinalYear/` and place your reference documents for the RAG pipeline.
-
-3. **Machine Learning Data & Model Weights**
-   - Create a `data/` folder inside `HeartDiseaseMLV3_93percent/` and place your dataset CSV file for the heart disease predictions.
-   - Place your trained model weights (`.json` and `.pkl` files) into `HeartDiseaseMLV3_93percent/ml/tasks/heart_disease/`.
+   - Create a `.env` file inside `RAG-Server/` to store your LLM configuration and API keys.
 
 # Step 4: Set up the database
 1. Create a database in postgresql terminal named "finalyearprojectdb"
@@ -125,12 +120,12 @@ This refresh your database schema and hopefully it resolves the crash with a sim
 This error occurs when you have not installed the required dependencies. Run the following command to install the required dependencies
 1. Frontend or Backend (in JS)
 ```bash
-cd fyp-backend (or cd fyp-frontend)
+cd backend (or cd frontend)
 npm install
 ```
 2. ML or RAG models (in python)
 ```bash
-cd HeartDiseaseMLV3_93percent (or cd RAGFinalYear)
+cd ML-Server (or cd RAG-Server)
 ./.venv/Scripts/activate
 pip install -r requirements.txt
 ```
