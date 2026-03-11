@@ -11,22 +11,22 @@ dist/
 .vscode/
 
 # ML Artifacts stuff
-*.pyc
-*.pyo
-*.pkl
-*.joblib
-ml/tasks/heart_disease/*.json
-ml/tasks/heart_disease/*.csv
-ml/tasks/heart_disease/*.joblib
-ml/tasks/heart_disease/*.pkl
+# *.pyc
+# *.pyo
+# *.pkl
+# *.joblib
+# ml/tasks/heart_disease/*.json
+# ml/tasks/heart_disease/*.csv
+# ml/tasks/heart_disease/*.joblib
+# ml/tasks/heart_disease/*.pkl
 
 # Data stuff
-*.csv
-data/
-*.sqlite
-*.sqlite3
-reports/
-test data/
+# *.csv
+# data/
+# *.sqlite
+# *.sqlite3
+# reports/
+# test data/
 
 # Very important stuff
 .env

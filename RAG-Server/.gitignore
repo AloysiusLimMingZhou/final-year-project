@@ -16,7 +16,7 @@ dist/
 *.sqlite
 *.sqlite3
 vectorstore/
-data/
+# data/
 
 # Very important stuff
 .env
