@@ -22,7 +22,7 @@ export default function PendingBlogDetail() {
     const fetchPost = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/posts/${params.pendingBlog}/pending-post`);
+            const response = await fetch(`/api/posts/${params.pendingBlog}/pending-posts`);
             if (!response.ok) { router.push("/blogs/pending-blogs"); return; }
             const data = await response.json();
             setPost(data);
@@ -38,7 +38,7 @@ export default function PendingBlogDetail() {
     const deletePost = async () => {
         if (!confirm(`Delete blog "${post?.title}"?\n\nThis cannot be undone.`)) return;
         setBusy(true);
-        const res = await fetch(`/api/posts/${params.pendingBlog}`, { method: "DELETE" });
+        const res = await fetch(`/api/posts/${params.pendingBlog}/delete-post`, { method: "DELETE" });
         setBusy(false);
         if (res.ok) router.push("/blogs/pending-blogs");
         else alert(await res.text());
@@ -108,12 +108,6 @@ export default function PendingBlogDetail() {
 
                 {/* Actions */}
                 <div className="mt-5 pt-4 border-t flex flex-wrap gap-3" style={{ borderColor: "var(--hc-border)" }}>
-                    <Button
-                        onClick={() => router.push(`/blogs/edit/${post.id}`)}
-                        iconLeft={<Pencil className="h-4 w-4" />}
-                    >
-                        Edit Blog
-                    </Button>
                     <button
                         onClick={deletePost}
                         disabled={busy}
