@@ -32,24 +32,24 @@ git clone https://github.com/AloysiusLimMingZhou/final-year-project.git
 For each service (backend, frontend, ML model and RAG model), ensure that you have downloaded all the necessary packages/dependencies. Follow the following steps:
 1. Backend
 ```bash
-cd fyp-backend
+cd backend
 npm install
 ```
 2. Frontend
 ```bash
-cd fyp-frontend
+cd frontend
 npm install
 ```
 3. ML model
 ```bash
-cd HeartDiseaseMLV3_93percent
+cd ML-Server
 python -m venv .venv (To create a python virtual environment if loaded in the beginning)
 ./.venv/Scripts/activate
 pip install -r requirements.txt
 ```
 4. RAG model
 ```bash
-cd RAGFinalYear
+cd RAG-Server
 python -m venv .venv (To create a python virtual environment if loaded in the beginning)
 ./.venv/Scripts/activate
 pip install -r requirements.txt
@@ -73,7 +73,7 @@ Before running the services, you must provide the necessary environment configur
 1. Create a database in postgresql terminal named "finalyearprojectdb"
 2. Run the backend with migrations:
 ```bash
-cd fyp-backend
+cd backend
 npm install
 npx prisma migrate dev
 npx prisma generate
@@ -84,21 +84,21 @@ npx prisma db seed
 1. Run the frontend 
 (1st terminal: 
 ```bash
-cd fyp-frontend
+cd frontend
 npm run dev
 ```
 )
 2. Run the backend 
 (2nd terminal: 
 ```bash
-cd fyp-backend
+cd backend
 npm run start:dev
 ```
 )
 3. Run the machine learning models 
 (3rd terminal: 
 ```bash
-cd HeartDiseaseMLV3_93percent
+cd ML-Server
 ./.venv/Scripts/activate (skip this if in virtual environment already)
 uvicorn service.api:app --reload --port 8002
 ```
@@ -106,7 +106,7 @@ uvicorn service.api:app --reload --port 8002
 4. Run the RAG models
 (4th terminal: 
 ```bash
-cd RAGFinalYear
+cd RAG-Server
 ./.venv/Scripts/activate (skip this if in virtual environment already)
 python RAGMedicalChatbot.py
 uvicorn server:app --reload --port 8001
