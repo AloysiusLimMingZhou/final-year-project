@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { cx } from "../components/ui/cx";
@@ -12,6 +13,15 @@ const SUGGESTIONS = [
   "How can I reduce cholesterol safely?",
 ];
 
+// Map UI messages -> FastAPI schema
+function toApiHistory(msgs: Msg[]) {
+  // FastAPI expects: history: [{ role, content }]
+  return msgs.map((m) => ({
+    role: m.role === "bot" ? "assistant" : "user",
+    content: m.text,
+  }));
+}
+
 export default function ChatPage() {
   const [msgs, setMsgs] = React.useState<Msg[]>([
     { role: "bot", text: "Hi! I’m your HealthConnect assistant. Ask me about your results or next steps ✨" },
@@ -19,6 +29,7 @@ export default function ChatPage() {
   const [draft, setDraft] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [status, setStatus] = React.useState<"Ready" | "Online" | "Offline">("Ready");
+  const [isSakura, setIsSakura] = React.useState(false);
 
   const scrollerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -50,6 +61,26 @@ export default function ChatPage() {
     el.scrollTop = el.scrollHeight;
   }, [msgs, loading]);
 
+  React.useEffect(() => {
+    const updateTheme = () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      setIsSakura(currentTheme === "sakura");
+    };
+
+    updateTheme();
+
+    const observer = new MutationObserver(() => {
+      updateTheme();
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   async function send(text?: string) {
     const content = (text ?? draft).trim();
     if (!content || loading) return;
@@ -63,6 +94,7 @@ export default function ChatPage() {
     try {
       const payload = {
         question: content,
+        history: toApiHistory(nextMsgs),
       };
 
       const res = await fetch("/api/chat/ask", {
@@ -151,7 +183,7 @@ export default function ChatPage() {
               <div className="flex items-end gap-2 max-w-[88%]">
                 {m.role === "bot" ? (
                   <div
-                    className="h-8 w-8 rounded-xl border grid place-items-center"
+                    className="h-8 w-8 rounded-xl border grid place-items-center shrink-0"
                     style={{ borderColor: "var(--borderSoft)", background: "var(--surface)" }}
                   >
                     <Bot className="h-4 w-4" style={{ color: "var(--accent)" }} />
@@ -193,7 +225,7 @@ export default function ChatPage() {
 
                 {m.role === "user" ? (
                   <div
-                    className="h-8 w-8 rounded-xl border grid place-items-center"
+                    className="h-8 w-8 rounded-xl border grid place-items-center shrink-0"
                     style={{ borderColor: "var(--borderSoft)", background: "var(--surface)" }}
                   >
                     <User className="h-4 w-4" style={{ color: "var(--muted)" }} />
@@ -205,11 +237,58 @@ export default function ChatPage() {
 
           {loading ? (
             <div className="flex justify-start">
-              <div
-                className="rounded-2xl px-3 py-2 text-sm border"
-                style={{ borderColor: "var(--borderSoft)", background: "var(--surface)", color: "var(--muted)" }}
-              >
-                Typing…
+              <div className="flex items-end gap-2 max-w-[88%]">
+                <div
+                  className="h-8 w-8 rounded-xl border grid place-items-center shrink-0"
+                  style={{ borderColor: "var(--borderSoft)", background: "var(--surface)" }}
+                >
+                  <Bot className="h-4 w-4" style={{ color: "var(--accent)" }} />
+                </div>
+
+                <div
+                  className="rounded-2xl border px-4 py-3"
+                  style={{
+                    borderColor: "var(--borderSoft)",
+                    background: mikuThinkingBackground(isSakura),
+                    color: "var(--text)",
+                  }}
+                >
+                  <div
+                    className="text-sm font-medium"
+                    style={{
+                      color: isSakura ? "#b76e79" : "var(--accent)",
+                    }}
+                  >
+                    Miku is thinking...
+                  </div>
+
+                  <div className="mt-2 flex items-end gap-3">
+                    <div className="relative h-28 w-28 shrink-0 animate-[float_2.6s_ease-in-out_infinite]">
+                      <Image
+                        src="/MikuMagicalCure.png"
+                        alt="Miku is thinking..."
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+
+                    <div
+                      className="flex items-center gap-1 pb-2"
+                      style={{ color: isSakura ? "#d48ca0" : "var(--muted)" }}
+                    >
+                      <span className="h-2 w-2 rounded-full bg-current animate-bounce opacity-70" />
+                      <span
+                        className="h-2 w-2 rounded-full bg-current animate-bounce opacity-70"
+                        style={{ animationDelay: "0.15s" }}
+                      />
+                      <span
+                        className="h-2 w-2 rounded-full bg-current animate-bounce opacity-70"
+                        style={{ animationDelay: "0.3s" }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ) : null}
@@ -231,7 +310,26 @@ export default function ChatPage() {
             Send
           </Button>
         </div>
+
+        <style jsx>{`
+          @keyframes float {
+            0%,
+            100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-6px);
+            }
+          }
+        `}</style>
       </Card>
     </div>
   );
+}
+
+function mikuThinkingBackground(isSakura: boolean) {
+  if (isSakura) {
+    return "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,240,245,0.96))";
+  }
+  return "var(--surface)";
 }
