@@ -256,7 +256,7 @@ export default function ProfilePage() {
 
       if (emergencyEmailChanged && emergencyEmail) {
         try {
-          await fetch("/api/users/resend-emergency-verification", {
+          await fetch("/api/users/send-emergency-verification", {
             method: "POST",
             credentials: "include",
           });
@@ -343,7 +343,7 @@ export default function ProfilePage() {
     setEmergencyOtpSending(true);
     setEmergencyOtpError("");
     try {
-      const res = await fetch("/api/users/resend-emergency-verification", {
+      const res = await fetch("/api/users/send-emergency-verification", {
         method: "POST",
         credentials: "include",
       });

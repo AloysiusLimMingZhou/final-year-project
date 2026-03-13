@@ -108,8 +108,8 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard, IsVerifiedGuard)
-  @Post('resend-emergency-verification')
-  async resendEmergencyVerification(@CurrentUser() user) {
+  @Post('send-emergency-verification')
+  async sendEmergencyVerification(@CurrentUser() user) {
     const fullUser = await this.emailVerificationService.findUserByEmail(user.email);
     if (!fullUser.emergency_contact_email) {
       return { message: 'No emergency contact email found.' };

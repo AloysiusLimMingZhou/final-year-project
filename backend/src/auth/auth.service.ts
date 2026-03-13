@@ -85,10 +85,7 @@ export class AuthService {
     const rawOTP = await this.emailVerificationService.generateOTP(user);
     await this.emailVerificationService.sendUserVerificationEmail(registerDto.email, rawOTP);
 
-    if (registerDto.emergency_contact_email) {
-      const rawEmergencyOTP = await this.emailVerificationService.generateEmergencyOTP(user);
-      await this.emailVerificationService.sendEmergencyVerificationEmail(user, rawEmergencyOTP);
-    }
+
   }
 
   login(user, res: Response) {

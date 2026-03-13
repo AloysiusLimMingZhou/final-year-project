@@ -72,6 +72,10 @@ export class HealthService {
             recorded_at: healthRecord.recorded_at ?? new Date()
         };
 
+        if (dbInput.thal === 0) dbInput.thal = 3;
+        else if (dbInput.thal === 1) dbInput.thal = 6;
+        else if (dbInput.thal === 2) dbInput.thal = 7;
+
         const newHealth: health = await this.prisma.health.create({ data: dbInput });
         return this.toHealthDto(newHealth);
     }

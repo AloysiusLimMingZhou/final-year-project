@@ -47,7 +47,7 @@ export default function DiagnosisPage() {
     oldpeak: 0.0,
     slope: 1,
     ca: 0,
-    thal: 3,
+    thal: 0,
   });
 
   React.useEffect(() => {
