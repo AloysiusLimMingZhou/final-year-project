@@ -59,9 +59,9 @@ export default function ReportsPage() {
       .then((data: HealthRecord[]) => {
         const sorted = Array.isArray(data)
           ? [...data].map(item => ({
-              ...item,
-              band: Math.round((item.risk_score ?? 0) * 100) === 0 ? "Low" : item.band || "Moderate"
-            })).sort(
+            ...item,
+            band: Math.round((item.risk_score ?? 0) * 100) === 0 ? "Low" : item.band || "Moderate"
+          })).sort(
             (a, b) =>
               new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
           )
@@ -72,7 +72,6 @@ export default function ReportsPage() {
       .finally(() => setHistoryLoading(false));
   }, [user]);
 
-  // ── Export CSV (same logic as dashboard) ────────────────────────────
   const exportToCSV = () => {
     if (history.length === 0) {
       setCsvError("No records to export. Run at least one screening first.");
@@ -121,7 +120,6 @@ export default function ReportsPage() {
     }
   };
 
-  // ── Download latest diagnosis PDF ───────────────────────────────────
   const downloadPDF = async () => {
     setPdfStatus("busy");
     setPdfError(null);
@@ -207,9 +205,7 @@ export default function ReportsPage() {
           </Button>
         </div>
 
-        {/* Action cards */}
         <div className="grid gap-3 md:grid-cols-2">
-          {/* ─── Export CSV ─── */}
           <div
             className="rounded-2xl border p-4 flex flex-col gap-3"
             style={{ borderColor: "var(--borderSoft)" }}
@@ -253,7 +249,6 @@ export default function ReportsPage() {
             )}
           </div>
 
-          {/* ─── Download PDF ─── */}
           <div
             className="rounded-2xl border p-4 flex flex-col gap-3"
             style={{ borderColor: "var(--borderSoft)" }}
@@ -313,7 +308,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Footer nav */}
         <div className="mt-4 flex gap-2">
           <Button variant="secondary" onClick={() => router.push("/dashboard")}>
             Back
