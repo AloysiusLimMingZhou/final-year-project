@@ -28,7 +28,6 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ReactNode;
-  soon?: boolean;
 };
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -221,7 +220,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </motion.div>
               <div className="text-left leading-tight">
                 <div className="text-sm font-semibold">HealthConnect</div>
-                <div className="text-xs" style={{ color: "var(--hc-muted)" }}>
+                <div className="text-xs" style={{ color: "var (--hc-muted)" }}>
                   Patient portal
                 </div>
               </div>
@@ -447,6 +446,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                           Profile
                         </Button>
                       </motion.div>
+
+                      {isAdmin ? (
+                        <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="mt-2 text-left">
+                          <Button
+                            variant="secondary"
+                            onClick={() => router.push("/admin")}
+                            iconLeft={<Shield className="h-4 w-4" />}
+                          >
+                            Admin
+                          </Button>
+                        </motion.div>
+                      ) : null}
 
                       {!isDoctor && !user?.doctor_status ? (
                         <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="mt-2 text-left">

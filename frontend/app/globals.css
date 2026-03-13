@@ -1,22 +1,8 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
 
-  /* HealthConnect UI vars */
-  --hc-accent: #0ea5a4;
-
-  /* Change this to #ffffff if you want pure white */
-  --hc-bg: #f7fafc;
-
-  --hc-surface: #ffffff;
-  --hc-text: #0f172a;
-  --hc-muted: #64748b;
-  --hc-border: rgba(15, 23, 42, 0.12);
-}
-
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
@@ -31,17 +17,10 @@ html, body {
   :root {
     --background: #0a0a0a;
     --foreground: #e5e7eb;
-
-    --hc-bg: #0b1220;
-    --hc-surface: #0f172a;
-    --hc-text: #e5e7eb;
-    --hc-muted: #9ca3af;
-    --hc-border: rgba(255, 255, 255, 0.14);
   }
 }
 
-body { 
-  background: var(--hc-bg); 
-  color: var(--hc-text); 
+body {
+  background: var(--hc-bg);
+  color: var(--hc-text);
 }
-

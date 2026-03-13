@@ -114,7 +114,12 @@ export default function DashboardPage() {
             return;
           }
 
-          const asc = [...data].sort(
+          const processedData = data.map((item: any) => ({
+            ...item,
+            band: Math.round((item.risk_score ?? 0) * 100) === 0 ? "Low" : item.band || "Moderate",
+          }));
+
+          const asc = [...processedData].sort(
             (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
           );
           const desc = [...asc].slice().reverse();
@@ -587,7 +592,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(expandedTable ? tableHistory : tableHistory.slice(0, 8)).map((r) => (
+                  {(expandedTable ? tableHistory : tableHistory.slice(0, 5)).map((r) => (
                     <tr key={r.id} className="border-t" style={{ borderColor: "var(--hc-border)" }}>
                       <td className="px-3 py-2" style={{ color: "var(--hc-muted)" }}>
                         {new Date(r.recorded_at).toLocaleDateString()}

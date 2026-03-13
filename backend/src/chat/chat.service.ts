@@ -75,7 +75,7 @@ export class ChatService {
             },
         })
 
-        if (userMessagePerSession >= 999) {
+        if (userMessagePerSession >= 10) {
             throw new BadRequestException("User has exceeded the maximum number of chats for this session! Please try again 6 hours later!");
         }
 

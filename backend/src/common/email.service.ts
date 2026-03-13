@@ -278,18 +278,6 @@ export class EmailService {
     private readonly prisma: PrismaService
   ) { }
 
-  generateDiagnosisReport(user_name: string, diagnosis: any) {
-    return generateDiagnosisHTML(user_name, diagnosis);
-  }
-
-  generateLowMediumRiskHTML(user_name: string, diagnosis: any) {
-    return generateDiagnosisHTML(user_name, diagnosis);
-  }
-
-  generateHighRiskHTML(user_name: string, diagnosis: any) {
-    return generateDiagnosisHTML(user_name, diagnosis);
-  }
-
   async sendReportEmail(user_id: string) {
     const user = await this.prisma.users.findUnique({
       where: { id: BigInt(user_id) }
@@ -356,8 +344,8 @@ export class EmailService {
   }
 
   async sendDoctorStatusEmail(email: string, name: string, status: 'approved' | 'rejected' | 'revoked') {
-    let subject = "Update on Your Doctor Application – HealthConnect";
-    let title = "Application Update";
+    let subject = "";
+    let title = "";
     let messageHtml = "";
     let headerBgColor = "";
 

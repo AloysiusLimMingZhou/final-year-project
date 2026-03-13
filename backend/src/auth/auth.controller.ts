@@ -72,7 +72,6 @@ export class AuthController {
     return this.authService.verifyPassword(user.id.toString(), body.password);
   }
 
-  // Request OTP for password change (sends email)
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @Post('request-password-change')
@@ -80,7 +79,6 @@ export class AuthController {
     return this.authService.requestPasswordChangeOTP(user.id.toString());
   }
 
-  // Change password with OTP verification
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @Put('change-password')

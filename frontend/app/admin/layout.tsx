@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card";
 const tabs = [
   { label: "Overview", href: "/admin" },
   { label: "Users", href: "/admin/users" },
+  { label: "ML-Models", href: "/admin/ml" },
   { label: "Blog Review", href: "/admin/post-review" },
   { label: "Doctors", href: "/admin/doctors" },
   { label: "Pending Doctors", href: "/admin/doctors/pending" },

@@ -52,13 +52,13 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-    themeKey: "calm",
+    themeKey: "sakura",
     setThemeKey: () => { },
     cycleTheme: () => { },
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [themeKey, setThemeKeyState] = useState<ThemeKey>("calm");
+    const [themeKey, setThemeKeyState] = useState<ThemeKey>("sakura");
 
     // Load saved theme from localStorage on mount
     useEffect(() => {

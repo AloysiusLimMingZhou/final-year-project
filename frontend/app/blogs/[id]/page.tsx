@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, Button } from "../../components/ui-kit";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
 import { ChevronLeft, Clock, Tag, User, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -122,7 +123,7 @@ export default function BlogDetailPage() {
           </span>
           {post.reviewed_at ? (
             <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "var(--borderSoft)" }}>
-              ✓ Reviewed{post.reviewer_name ? ` by ${post.reviewer_name}` : ""}{" "}
+              ✓ Reviewed{post.reviewer_name ? ` by ${post.reviewer_name} at` : ""}{" "}
               {`(${new Date(post.reviewed_at).toLocaleDateString()})`}
             </span>
           ) : null}

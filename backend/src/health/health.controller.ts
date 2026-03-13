@@ -37,10 +37,6 @@ export class HealthController {
         return this.healthService.findNearestHospital(user.id.toString());
     }
 
-    /**
-     * POST /health/send-report-email
-     * Sends the user's latest diagnosis result to their registered email address.
-     */
     @Post('send-report-email')
     @HttpCode(200)
     @UseGuards(JwtAuthGuard, IsVerifiedGuard)

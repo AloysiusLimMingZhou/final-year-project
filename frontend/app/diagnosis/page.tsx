@@ -2,9 +2,10 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Card, Badge, Button } from "../components/ui-kit";
-import { ClipboardList, Loader2, ArrowRight, AlertTriangle, Info, X, UserCog } from "lucide-react";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
 import SoftSelect from "../components/ui/Select";
+import { ClipboardList, Loader2, ArrowRight, AlertTriangle, Info, X, UserCog } from "lucide-react";
 
 type Band = "Low" | "Moderate" | "High";
 

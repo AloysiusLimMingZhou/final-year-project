@@ -77,8 +77,6 @@ export class HealthService {
     }
 
     async predictHealth(user_id: string, healthRecord: CreateHealthDto): Promise<any> {
-        const savedHealth = await this.createHealthRecord(user_id, healthRecord);
-
         let response: any;
         try {
             response = await lastValueFrom(
@@ -86,8 +84,10 @@ export class HealthService {
             );
         } catch (err) {
             console.error('ML service (port 8002) is unreachable or returned an error:', err?.message ?? err);
-            throw new NotFoundException('ML prediction service is currently unavailable. Health record was saved but prediction could not be completed.');
+            throw new NotFoundException('ML prediction service is currently unavailable. Health record was not saved.');
         }
+
+        const savedHealth = await this.createHealthRecord(user_id, healthRecord);
 
         const data: HealthPredictionDto = response.data;
 

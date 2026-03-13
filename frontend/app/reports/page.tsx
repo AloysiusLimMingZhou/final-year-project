@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { Card, Button } from "../components/ui-kit";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
 import { Download, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface HealthRecord {
@@ -57,7 +58,10 @@ export default function ReportsPage() {
       })
       .then((data: HealthRecord[]) => {
         const sorted = Array.isArray(data)
-          ? [...data].sort(
+          ? [...data].map(item => ({
+              ...item,
+              band: Math.round((item.risk_score ?? 0) * 100) === 0 ? "Low" : item.band || "Moderate"
+            })).sort(
             (a, b) =>
               new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
           )

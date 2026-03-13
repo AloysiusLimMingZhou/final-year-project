@@ -2,7 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Card, Button, Badge } from "../components/ui-kit";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Badge } from "../components/ui/Badge";
 import { ChevronLeft, Loader2, FileText } from "lucide-react";
 
 type Band = "Low" | "Moderate" | "High";
@@ -72,7 +74,7 @@ export default function HistoryPage() {
               <tbody>
                 {rows.map((r, idx) => {
                   const risk = Math.round(((r?.risk_score ?? r?.probability ?? 0) as number) * 100);
-                  const band = (r?.band || "Moderate") as Band;
+                  const band = (risk === 0 ? "Low" : (r?.band || "Moderate")) as Band;
                   return (
                     <tr key={r?.id ?? idx} className="border-t" style={{ borderColor: "var(--borderSoft)" }}>
                       <Td style={{ color: "var(--muted)" }}>

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
-import { Card } from "../components/ui-kit";
+import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import SoftSelect from "../components/ui/Select";
 import { Search, Filter, ChevronLeft, ChevronRight, Plus, Clock, User } from "lucide-react";

@@ -123,7 +123,7 @@ export default function ProfilePage() {
         try {
           const sexData = await sexRes.json();
           if (Array.isArray(sexData) && sexData.length > 0) categories = sexData;
-        } catch {}
+        } catch { }
 
         if (!mounted) return;
 
@@ -239,15 +239,15 @@ export default function ProfilePage() {
       setProfile((p) =>
         p
           ? {
-              ...p,
-              name: name.trim(),
-              age: age ? Number(age) : p.age,
-              sex: sex || p.sex,
-              emergency_contact_email: emergencyEmail || null,
-              emergency_contact_isverified: emergencyEmailChanged
-                ? false
-                : p.emergency_contact_isverified,
-            }
+            ...p,
+            name: name.trim(),
+            age: age ? Number(age) : p.age,
+            sex: sex || p.sex,
+            emergency_contact_email: emergencyEmail || null,
+            emergency_contact_isverified: emergencyEmailChanged
+              ? false
+              : p.emergency_contact_isverified,
+          }
           : p
       );
 
@@ -440,20 +440,20 @@ export default function ProfilePage() {
                   t.type === "success"
                     ? "#F0FDF4"
                     : t.type === "error"
-                    ? "#FEF2F2"
-                    : "#EEF2FF",
+                      ? "#FEF2F2"
+                      : "#EEF2FF",
                 borderColor:
                   t.type === "success"
                     ? "#22C55E"
                     : t.type === "error"
-                    ? "#EF4444"
-                    : "#6366F1",
+                      ? "#EF4444"
+                      : "#6366F1",
                 color:
                   t.type === "success"
                     ? "#166534"
                     : t.type === "error"
-                    ? "#991B1B"
-                    : "#3730A3",
+                      ? "#991B1B"
+                      : "#3730A3",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.10)",
               }}
             >

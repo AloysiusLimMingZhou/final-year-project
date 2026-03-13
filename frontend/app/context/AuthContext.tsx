@@ -31,10 +31,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-/** Routes that don't require authentication */
 const PUBLIC_ROUTES = ["/login", "/register", "/forgot-password"];
 
-/** Session re-validation interval (5 minutes) */
 const SESSION_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
 export const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
@@ -44,10 +42,6 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const refreshAttemptedRef = useRef(false);
 
-    /**
-     * Try to refresh the access token using the refresh cookie.
-     * Returns true if refresh succeeded.
-     */
     const tryRefreshToken = useCallback(async (): Promise<boolean> => {
         try {
             const res = await fetch("/api/auth/refresh", { method: "POST" });
@@ -57,11 +51,6 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
         }
     }, []);
 
-    /**
-     * Check login status by calling /api/auth/profile.
-     * If the access token has expired (401) and we haven't tried a refresh yet,
-     * attempt a silent token refresh and retry once.
-     */
     const checkLoginStatus = useCallback(async () => {
         try {
             const response = await fetch("/api/auth/profile");
@@ -75,6 +64,7 @@ export const AuthContextProvider = ({ children }: { children: React.ReactNode })
 
             // Access token expired — try silent refresh with the refresh token
             if (response.status === 401 && !refreshAttemptedRef.current) {
+                setLoading(true);
                 refreshAttemptedRef.current = true;
                 const refreshed = await tryRefreshToken();
 

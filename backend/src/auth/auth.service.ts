@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config'
 import { UsersService } from '../users/users.service';
 import { UserResponseDto } from '../users/dto/UserResponse.dto';
 import { EmailVerificationService } from 'src/email-verification/email-verification.service';
-import { VerifyOtpDto } from 'src/email-verification/dto/verify-otp.dto';
 
 @Injectable()
 export class AuthService {

@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
-import { Card, Badge, Button } from "../components/ui-kit";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Badge } from "../components/ui/Badge";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -16,8 +18,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Band = "Low" | "Moderate" | "High";
 type Stored = {
@@ -37,8 +37,6 @@ interface Hospital {
 
 type HospitalLoadState = "idle" | "loading" | "done" | "error" | "unavailable";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function mapsUrl(lat: number, lng: number, name: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&center=${lat},${lng}`;
 }
@@ -46,8 +44,6 @@ function mapsUrl(lat: number, lng: number, name: string) {
 function typeLabel(type: string) {
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
-
-// ─── Sub-component: Hospital Card ─────────────────────────────────────────────
 
 function HospitalCard({ hospital }: { hospital: Hospital }) {
   const isHospital = hospital.type === "hospital";
@@ -205,7 +201,7 @@ export default function ResultsPage() {
             prediction: {
               model_version: "history",
               probability: h.probability ?? h.risk_score ?? 0,
-              band: h.band as Band,
+              band: (Math.round((h.risk_score ?? 0) * 100) === 0 ? "Low" : h.band) as Band,
               risk_score: h.risk_score ?? 0,
             },
           });

@@ -101,7 +101,6 @@ export class UsersService {
 
     const { specialization, graduated_from, place_of_practice, type_of_registration, years_of_experience, identification_number, phone_number, provider, isverified, emergency_contact_isverified, ...updateUserData } = updateUserDto;
 
-    // If emergency contact email changed, reset its verification
     if (
       updateUserData.emergency_contact_email !== undefined &&
       updateUserData.emergency_contact_email !== user.emergency_contact_email

@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
-import { Card, Button, cx } from "../components/ui-kit";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { cx } from "../components/ui/cx";
 import { SendHorizonal, Sparkles, Bot, User, Link as LinkIcon } from "lucide-react";
 
 type Msg = { role: "user" | "bot"; text: string; citation?: string[] };
@@ -9,15 +11,6 @@ type Msg = { role: "user" | "bot"; text: string; citation?: string[] };
 const SUGGESTIONS = [
   "How can I reduce cholesterol safely?",
 ];
-
-// Map UI messages -> FastAPI schema
-function toApiHistory(msgs: Msg[]) {
-  // FastAPI expects: history: [{ role, content }]
-  return msgs.map((m) => ({
-    role: m.role === "bot" ? "assistant" : "user",
-    content: m.text,
-  }));
-}
 
 export default function ChatPage() {
   const [msgs, setMsgs] = React.useState<Msg[]>([
@@ -84,7 +77,6 @@ export default function ChatPage() {
           const parsed = JSON.parse(errText);
           errText = parsed.message || parsed.error || errText;
         } catch {
-          // ignore parsing error
         }
         throw new Error(errText);
       }

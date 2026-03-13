@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import SoftSelect from "../../components/ui/Select";
 import { Stethoscope, ChevronLeft, Upload, AlertTriangle, X, ShieldAlert, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 export default function DoctorApply() {
@@ -12,6 +13,7 @@ export default function DoctorApply() {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [typeOfRegistrations, setTypeOfRegistrations] = useState<string[]>([]);
+    const [selectedRegistration, setSelectedRegistration] = useState<string>("");
     const [fileName, setFileName] = useState<string>("");
     const [showConfirmPopup, setShowConfirmPopup] = useState(false);
     const [showFileWarning, setShowFileWarning] = useState(false);
@@ -27,9 +29,13 @@ export default function DoctorApply() {
         try {
             const response = await fetch("/api/doctors/type-of-registration");
             const data = await response.json();
-            setTypeOfRegistrations(Array.isArray(data) ? data : []);
+            const types = Array.isArray(data) ? data : [];
+            setTypeOfRegistrations(types);
+            if (types.length > 0 && !selectedRegistration) setSelectedRegistration(types[0]);
         } catch {
-            setTypeOfRegistrations(["Full Registration", "Provisional Registration", "TPC Number"]);
+            const fallback = ["Full Registration", "Provisional Registration", "TPC Number"];
+            setTypeOfRegistrations(fallback);
+            if (!selectedRegistration) setSelectedRegistration(fallback[0]);
         }
     };
 
@@ -318,13 +324,14 @@ export default function DoctorApply() {
                         ))}
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 z-10">
                         <label className="text-sm font-semibold" style={{ color: "var(--hc-text)" }}>Type of Registration <span style={{ color: "#EF4444" }}>*</span></label>
-                        <select name="type_of_registration" className={inputCls} style={inputStyle} required>
-                            {typeOfRegistrations.map((r) => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
-                        </select>
+                        <SoftSelect
+                            value={selectedRegistration}
+                            onChange={(v) => setSelectedRegistration(v)}
+                            options={typeOfRegistrations.map((r) => ({ value: r, label: r }))}
+                        />
+                        <input type="hidden" name="type_of_registration" value={selectedRegistration} />
                     </div>
 
                     {/* File upload */}

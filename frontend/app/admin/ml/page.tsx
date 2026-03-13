@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import SoftSelect from "../../components/ui/Select";
 import { Activity, Beaker, CheckCircle2, RotateCcw } from "lucide-react";
 
 // The FastAPI base URL runs on port 8002
-const API = "http://localhost:8002";
+const API = process.env.NEXT_PUBLIC_ML_API_ENDPOINT;
 
 export default function MLMonitoringPage() {
     const { user, loading } = useAuth();
@@ -169,25 +170,18 @@ export default function MLMonitoringPage() {
                     </h2>
                     <div className="flex gap-2 mb-4 items-end">
                         <div className="flex-1">
-                            <label className="block text-xs mb-1 opacity-70">Metric</label>
-                            <select
+                            <label className="block text-xs mb-1 opacity-70" style={{ color: "var(--hc-text)" }}>Metric</label>
+                            <SoftSelect
                                 value={plotMetric}
-                                onChange={(e) => setPlotMetric(e.target.value)}
-                                className="w-full text-sm rounded-md border p-2"
-                                style={{
-                                    background: "#0f172a",
-                                    color: "#e2e8f0",
-                                    borderColor: "rgba(255,255,255,0.15)",
-                                    outline: "none",
-                                }}
-                            >
-                                <option value="roc_auc" style={{ background: "#0f172a", color: "#e2e8f0" }}>ROC AUC</option>
-                                <option value="accuracy" style={{ background: "#0f172a", color: "#e2e8f0" }}>Accuracy</option>
-                                <option value="precision" style={{ background: "#0f172a", color: "#e2e8f0" }}>Precision</option>
-                                <option value="recall" style={{ background: "#0f172a", color: "#e2e8f0" }}>Recall</option>
-                                <option value="f1" style={{ background: "#0f172a", color: "#e2e8f0" }}>F1 Score</option>
-                                <option value="pr_auc" style={{ background: "#0f172a", color: "#e2e8f0" }}>PR AUC</option>
-                            </select>
+                                onChange={(v) => setPlotMetric(v)}
+                                options={[
+                                    { value: "roc_auc", label: "ROC AUC" },
+                                    { value: "accuracy", label: "Accuracy" },
+                                    { value: "precision", label: "Precision" },
+                                    { value: "recall", label: "Recall" },
+                                    { value: "f1", label: "F1 Score" },
+                                ]}
+                            />
                         </div>
                         <Button onClick={generatePlot}>Generate Plot</Button>
                     </div>

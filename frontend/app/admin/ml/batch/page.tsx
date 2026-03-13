@@ -9,28 +9,18 @@ import { Activity, Beaker, FileSpreadsheet, Upload, ArrowLeft } from "lucide-rea
 
 const API = process.env.NEXT_PUBLIC_ML_API_ENDPOINT;
 
-/**
- * The backend sometimes returns a JSON-encoded string where newlines are
- * the literal two-character sequences \r\n (backslash + letter) rather than
- * real line-break bytes.  This helper normalises them into actual newlines
- * so that both the UI table and the downloaded CSV file work correctly.
- */
 function normalizeCsv(raw: string): string {
     let text = raw.trim();
 
-    // If the entire response is a JSON string (wrapped in quotes), unwrap it
     if (text.startsWith('"') && text.endsWith('"')) {
         try { text = JSON.parse(text); } catch { /* leave as-is */ }
     }
-
-    // Replace every variant of literal escape sequences with a real newline
-    // Order matters: handle \r\n before \r or \n individually
     text = text
-        .replace(/\\r\\n/g, "\n")   // literal backslash-r-backslash-n
-        .replace(/\\r/g, "\n")       // literal backslash-r
-        .replace(/\\n/g, "\n")       // literal backslash-n
-        .replace(/\r\n/g, "\n")      // real CRLF → LF
-        .replace(/\r/g, "\n");       // stray CR → LF
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\r/g, "\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n");
 
     return text;
 }
@@ -55,7 +45,7 @@ export default function MLBatchPage() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             setFile(e.target.files[0]);
-            setResultCsv(null); // reset result on new file
+            setResultCsv(null);
         }
     };
 
@@ -91,8 +81,6 @@ export default function MLBatchPage() {
 
     const downloadResults = () => {
         if (!resultCsv) return;
-        // resultCsv is already normalised — use \r\n line endings for
-        // maximum compatibility with Excel when opening the downloaded file
         const excelFriendly = resultCsv.replace(/\n/g, "\r\n");
         const blob = new Blob([excelFriendly], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
