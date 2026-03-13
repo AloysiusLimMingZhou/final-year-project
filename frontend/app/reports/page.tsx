@@ -92,7 +92,7 @@ export default function ReportsPage() {
 
       const rows = history.map((r) =>
         [
-          new Date(r.recorded_at).toISOString().split("T")[0],
+          `" ${new Date(r.recorded_at).toLocaleString()}"`,
           r.age, r.sex, r.cp, r.trestbps, r.chol, r.fbs, r.restecg,
           r.thalach, r.exang, r.oldpeak, r.slope, r.ca, r.thal,
           r.risk_score != null ? (r.risk_score * 100).toFixed(1) : "",
@@ -106,7 +106,8 @@ export default function ReportsPage() {
 
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `health_history_${user?.name ?? "user"}_${Date.now()}.csv`);
+      const currentDate = new Date().toISOString().split("T")[0];
+      link.setAttribute("download", `health_history_${user?.name ?? "user"}_${currentDate}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
