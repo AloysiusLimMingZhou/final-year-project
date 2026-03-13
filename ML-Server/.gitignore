@@ -9,6 +9,7 @@ dist/
 .ipynb_checkpoints/
 .idea/
 .vscode/
+package-lock.json
 
 # ML Artifacts stuff
 # *.pyc
