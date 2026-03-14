@@ -116,7 +116,7 @@ export default function DashboardPage() {
 
           const processedData = data.map((item: any) => ({
             ...item,
-            band: Math.round((item.risk_score ?? 0) * 100) === 0 ? "Low" : item.band || "Moderate",
+            band: Math.round((item.risk_score ?? 0) * 100) === 0 ? "Low" : item.band,
           }));
 
           const asc = [...processedData].sort(
@@ -248,6 +248,7 @@ export default function DashboardPage() {
   const trendData = useMemo(
     () =>
       trendHistory.map((h) => ({
+        recorded_at: h.recorded_at,
         date: formatShortDate(h.recorded_at),
         scorePct: Math.round(h.risk_score * 100),
         band: h.band,
@@ -256,13 +257,14 @@ export default function DashboardPage() {
   );
 
   const cholData = useMemo(
-    () => cholHistory.map((h) => ({ date: formatShortDate(h.recorded_at), value: h.chol })),
+    () => cholHistory.map((h) => ({ recorded_at: h.recorded_at, date: formatShortDate(h.recorded_at), value: h.chol })),
     [cholHistory]
   );
 
   const bpData = useMemo(
     () =>
       bpHistory.map((h) => ({
+        recorded_at: h.recorded_at,
         date: formatShortDate(h.recorded_at),
         bp: h.trestbps,
         maxHr: h.thalach,
@@ -418,7 +420,7 @@ export default function DashboardPage() {
                 </defs>
 
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.25)" />
-                <XAxis dataKey="date" tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="recorded_at" tickFormatter={(val) => formatShortDate(val)} tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 100]} tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} width={36} />
                 <Tooltip
                   contentStyle={{
@@ -428,6 +430,7 @@ export default function DashboardPage() {
                     color: "var(--hc-text)",
                   }}
                   labelStyle={{ color: "var(--hc-muted)" }}
+                  labelFormatter={(label) => formatShortDate(label)}
                   formatter={(value: any, _name: any, item: any) => {
                     const band = item?.payload?.band;
                     return [`${value}% (${band})`, "Risk"];
@@ -440,7 +443,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Lower analytics */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
           title="Cholesterol level (mg/dl)"
@@ -494,11 +496,12 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <ReLineChart data={cholData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.20)" />
-                <XAxis dataKey="date" tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="recorded_at" tickFormatter={(val) => formatShortDate(val)} tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} width={40} />
                 <Tooltip
                   contentStyle={{ background: "var(--hc-surface)", border: "1px solid var(--hc-border)", borderRadius: 12, color: "var(--hc-text)" }}
                   labelStyle={{ color: "var(--hc-muted)" }}
+                  labelFormatter={(label) => formatShortDate(label)}
                 />
                 <Line type="monotone" dataKey="value" stroke="rgba(99,102,241,1)" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} />
               </ReLineChart>
@@ -558,11 +561,12 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <ReLineChart data={bpData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.20)" />
-                <XAxis dataKey="date" tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="recorded_at" tickFormatter={(val) => formatShortDate(val)} tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "var(--hc-muted)", fontSize: 12 }} axisLine={false} tickLine={false} width={40} />
                 <Tooltip
                   contentStyle={{ background: "var(--hc-surface)", border: "1px solid var(--hc-border)", borderRadius: 12, color: "var(--hc-text)" }}
                   labelStyle={{ color: "var(--hc-muted)" }}
+                  labelFormatter={(label) => formatShortDate(label)}
                 />
                 <Legend wrapperStyle={{ color: "var(--hc-muted)", fontSize: 12 }} />
                 <Line type="monotone" dataKey="maxHr" name="Max heart rate" stroke="#F59E0B" strokeWidth={2} dot={{ r: 2 }} />

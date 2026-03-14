@@ -13,7 +13,7 @@ function normalizeCsv(raw: string): string {
     let text = raw.trim();
 
     if (text.startsWith('"') && text.endsWith('"')) {
-        try { text = JSON.parse(text); } catch { /* leave as-is */ }
+        try { text = JSON.parse(text); } catch { }
     }
     text = text
         .replace(/\\r\\n/g, "\n")
