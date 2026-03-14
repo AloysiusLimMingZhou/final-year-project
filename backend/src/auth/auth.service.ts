@@ -84,8 +84,6 @@ export class AuthService {
     });
     const rawOTP = await this.emailVerificationService.generateOTP(user);
     await this.emailVerificationService.sendUserVerificationEmail(registerDto.email, rawOTP);
-
-
   }
 
   login(user, res: Response) {

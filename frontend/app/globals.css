@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
 
-html,
-body {
+  /* HealthConnect UI vars (Sakura default) */
+  --hc-accent: #f26f9b;
+  --hc-bg: #FFF5F8;
+  --hc-surface: #FFFDFE;
+  --hc-text: #4A2E39;
+  --hc-muted: #A06A7C;
+  --hc-border: rgba(244, 143, 177, 0.22);
+}
+
+html, body {
   overflow-x: hidden;
 }
 
@@ -20,7 +31,8 @@ body {
   }
 }
 
-body {
-  background: var(--hc-bg);
-  color: var(--hc-text);
+body { 
+  background: var(--hc-bg); 
+  color: var(--hc-text); 
 }
+
