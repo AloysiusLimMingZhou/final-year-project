@@ -42,7 +42,6 @@ BAND_THRESHOLDS = {"low": 0.40, "high": 0.70}
 
 
 def find_candidate_csvs():
-    # Typical names we created earlier + any matching pattern
     patterns = [
         "heart_cleveland.csv",
         "heart_hungary.csv",

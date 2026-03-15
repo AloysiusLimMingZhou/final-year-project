@@ -38,8 +38,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const hideHeader =
     pathname === "/" ||
     pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
-    pathname.startsWith("/forgot-password");
+    pathname.startsWith("/register")
 
   const nav: NavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },

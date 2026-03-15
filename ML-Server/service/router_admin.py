@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pathlib import Path
 from pydantic import BaseModel
 import json
+from .model_manager import hot_reload
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -49,6 +50,9 @@ def activate_model(req: ActivateRequest):
     reg["tasks"].setdefault(task, {})
     reg["tasks"][task]["active"] = str(art_path.resolve())
     REGISTRY.write_text(json.dumps(reg, indent=2))
+    
+    # CRITICAL: Clear cache so next request loads the new model
+    hot_reload()
 
     return {"ok": True, "task": task, "active": str(art_path.resolve())}
 
@@ -73,5 +77,8 @@ def activate_by_label(label: str, task: str = "heart_disease"):
     reg["tasks"].setdefault(task, {})
     reg["tasks"][task]["active"] = str(art.resolve())
     REGISTRY.write_text(json.dumps(reg, indent=2))
+    
+    # CRITICAL: Clear cache so next request loads the new model
+    hot_reload()
 
     return {"ok": True, "task": task, "active": str(art.resolve())}

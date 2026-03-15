@@ -155,7 +155,7 @@ function HospitalCard({ hospital }: { hospital: Hospital }) {
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// Main Page
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -179,7 +179,7 @@ export default function ResultsPage() {
   const [hospitalState, setHospitalState] = React.useState<HospitalLoadState>("idle");
   const [hospitalError, setHospitalError] = React.useState<string | null>(null);
 
-  // ── Load prediction result ──────────────────────────────────────────────────
+  // Load prediction result
   React.useEffect(() => {
     const raw = sessionStorage.getItem("hc_latest_prediction");
     if (raw) {
@@ -226,7 +226,7 @@ export default function ResultsPage() {
     })();
   }, []);
 
-  // ── Lazily load hospitals once prediction is done ───────────────────────────
+  // Lazily load hospitals once prediction is done
   React.useEffect(() => {
     if (loading) return; // wait until prediction is resolved first
     setHospitalState("loading");
@@ -250,7 +250,7 @@ export default function ResultsPage() {
     })();
   }, [loading]); // fires as soon as loading flips to false
 
-  // ── Email handler ───────────────────────────────────────────────────────────
+  // Email handler
   const handleSendEmail = async () => {
     setEmailStatus("sending");
     setEmailError(null);
@@ -270,7 +270,7 @@ export default function ResultsPage() {
     }
   };
 
-  // ── Emergency email handler ─────────────────────────────────────────────
+  // Emergency email handler
   const handleSendEmergencyEmail = async () => {
     setEmergencyEmailStatus("sending");
     setEmergencyEmailError(null);
@@ -290,7 +290,7 @@ export default function ResultsPage() {
     }
   };
 
-  // ── Prediction loading skeleton ─────────────────────────────────────────────
+  // Prediction loading skeleton
   if (loading) {
     return (
       <Card title="Latest result">
@@ -320,10 +320,10 @@ export default function ResultsPage() {
   const tone = band === "Low" ? "low" : band === "High" ? "high" : "mid";
   const Icon = tone === "low" ? CheckCircle2 : tone === "mid" ? AlertTriangle : XCircle;
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // Render
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {/* ── Result card ─────────────────────────────────────────────────────── */}
+      {/* Result card */}
       <Card title="Latest result">
         <div className="flex items-center gap-3">
           <Icon className="h-8 w-8" style={{ color: "var(--accent)" }} />
@@ -355,7 +355,7 @@ export default function ResultsPage() {
         </div>
       </Card>
 
-      {/* ── Email card ──────────────────────────────────────────────────────── */}
+      {/* Email card */}
       <Card title="Email my results">
         <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
           Receive a copy of your latest screening result directly in your inbox. The email colour
@@ -459,9 +459,9 @@ export default function ResultsPage() {
         )}
       </Card>
 
-      {/* ── Nearby Hospitals card ────────────────────────────────────────────── */}
+      {/* Nearby Hospitals card */}
       <Card title="Nearby hospitals & clinics">
-        {/* ── Loading ── */}
+        {/* Loading */}
         {hospitalState === "loading" && (
           <div
             style={{
@@ -512,7 +512,7 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* ── No location set ── */}
+        {/* No location set */}
         {hospitalState === "unavailable" && (
           <div
             style={{
@@ -548,7 +548,7 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* ── Error ── */}
+        {/* Error */}
         {hospitalState === "error" && (
           <div
             style={{
@@ -575,7 +575,7 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* ── Empty result ── */}
+        {/* Empty result */}
         {hospitalState === "done" && hospitals.length === 0 && (
           <div
             style={{
@@ -594,7 +594,7 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* ── Hospital list ── */}
+        {/* Hospital list */}
         {hospitalState === "done" && hospitals.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <p style={{ margin: "0 0 4px", fontSize: 12, color: "var(--muted)" }}>
@@ -607,7 +607,7 @@ export default function ResultsPage() {
         )}
       </Card>
 
-      {/* ── Reminder card ───────────────────────────────────────────────────── */}
+      {/* Reminder card */}
       <Card title="Reminder">
         <p className="text-sm" style={{ color: "var(--muted)" }}>
           Educational estimate only. Not a medical diagnosis. If you feel unwell or at risk, consult
