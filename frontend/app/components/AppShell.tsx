@@ -30,6 +30,39 @@ type NavItem = {
   icon: React.ReactNode;
 };
 
+function ProfileMenuItem({
+  icon,
+  label,
+  onClick,
+  withBorder = false,
+  danger = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  withBorder?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ x: 2, backgroundColor: "var(--hc-soft)" }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: "tween", duration: 0.12, ease: "easeOut" }}
+      className="w-full px-4 py-3 text-left text-sm font-semibold flex items-center gap-2 transition cursor-pointer focus:outline-none focus-visible:ring-2"
+      style={{
+        color: danger ? "#dc2626" : "var(--hc-text)",
+        borderTop: withBorder ? "1px solid var(--hc-border)" : "none",
+        borderColor: "var(--hc-border)",
+      }}
+    >
+      <span style={{ color: danger ? "#dc2626" : "var(--hc-accent)" }}>{icon}</span>
+      {label}
+    </motion.button>
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -38,7 +71,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const hideHeader =
     pathname === "/" ||
     pathname.startsWith("/login") ||
-    pathname.startsWith("/register")
+    pathname.startsWith("/register");
 
   const nav: NavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -132,6 +165,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
+    setProfileOpen(false);
     await authLogout();
   }
 
@@ -220,7 +254,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </motion.div>
               <div className="text-left leading-tight">
                 <div className="text-sm font-semibold">HealthConnect</div>
-                <div className="text-xs" style={{ color: "var (--hc-muted)" }}>
+                <div className="text-xs" style={{ color: "var(--hc-muted)" }}>
                   Patient portal
                 </div>
               </div>
@@ -276,7 +310,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     transition={{ type: "tween", duration: 0.12, ease: "easeOut" }}
                     onClick={() => setProfileOpen((v) => !v)}
                     className="flex items-center gap-2 rounded-2xl px-3 py-2 border"
-                    style={{ borderColor: "var(--hc-border)", background: "transparent" }}
+                    style={{
+                      borderColor: "var(--hc-border)",
+                      background: profileOpen ? "var(--hc-soft)" : "transparent",
+                    }}
                     aria-label="Open profile menu"
                   >
                     <div
@@ -297,58 +334,68 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       </div>
                     </div>
 
-                    <ChevronDown className="h-4 w-4" style={{ color: "var(--hc-muted)" }} />
+                    <motion.div
+                      animate={{ rotate: profileOpen ? 180 : 0 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                    >
+                      <ChevronDown className="h-4 w-4" style={{ color: "var(--hc-muted)" }} />
+                    </motion.div>
                   </motion.button>
 
                   <AnimatePresence>
                     {profileOpen ? (
                       <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.14, ease: "easeOut" }}
-                        className="absolute right-0 mt-2 w-56 rounded-2xl border shadow-sm overflow-hidden"
-                        style={{ borderColor: "var(--hc-border)", background: "var(--hc-surface)" }}
+                        className="absolute right-0 mt-2 w-56 rounded-2xl border shadow-sm overflow-hidden z-50"
+                        style={{
+                          borderColor: "var(--hc-border)",
+                          background: "var(--hc-surface)",
+                          boxShadow: "0 12px 32px rgba(0,0,0,0.10)",
+                        }}
                       >
-                        <button
-                          onClick={() => router.push("/profile")}
-                          className="w-full px-4 py-3 text-left text-sm font-semibold flex items-center gap-2"
-                          style={{ color: "var(--hc-text)" }}
-                        >
-                          <Settings className="h-4 w-4" style={{ color: "var(--hc-accent)" }} />
-                          Profile
-                        </button>
+                        <ProfileMenuItem
+                          icon={<Settings className="h-4 w-4" />}
+                          label="Profile"
+                          onClick={() => {
+                            router.push("/profile");
+                            setProfileOpen(false);
+                          }}
+                        />
 
                         {isAdmin ? (
-                          <button
-                            onClick={() => router.push("/admin")}
-                            className="w-full px-4 py-3 text-left text-sm font-semibold flex items-center gap-2 border-t"
-                            style={{ color: "var(--hc-text)", borderColor: "var(--hc-border)" }}
-                          >
-                            <Shield className="h-4 w-4" style={{ color: "var(--hc-accent)" }} />
-                            Admin
-                          </button>
+                          <ProfileMenuItem
+                            icon={<Shield className="h-4 w-4" />}
+                            label="Admin"
+                            withBorder
+                            onClick={() => {
+                              router.push("/admin");
+                              setProfileOpen(false);
+                            }}
+                          />
                         ) : null}
 
                         {!isDoctor && !user?.doctor_status ? (
-                          <button
-                            onClick={() => router.push("/doctor/apply")}
-                            className="w-full px-4 py-3 text-left text-sm font-semibold flex items-center gap-2 border-t"
-                            style={{ color: "var(--hc-text)", borderColor: "var(--hc-border)" }}
-                          >
-                            <HeartPulse className="h-4 w-4" style={{ color: "var(--hc-accent)" }} />
-                            Apply for Doctor
-                          </button>
+                          <ProfileMenuItem
+                            icon={<HeartPulse className="h-4 w-4" />}
+                            label="Apply for Doctor"
+                            withBorder
+                            onClick={() => {
+                              router.push("/doctor/apply");
+                              setProfileOpen(false);
+                            }}
+                          />
                         ) : null}
 
-                        <button
+                        <ProfileMenuItem
+                          icon={<LogOut className="h-4 w-4" />}
+                          label="Logout"
+                          withBorder
+                          danger
                           onClick={logout}
-                          className="w-full px-4 py-3 text-left text-sm font-semibold flex items-center gap-2 border-t"
-                          style={{ color: "var(--hc-text)", borderColor: "var(--hc-border)" }}
-                        >
-                          <LogOut className="h-4 w-4" style={{ color: "var(--hc-accent)" }} />
-                          Logout
-                        </button>
+                        />
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
@@ -356,7 +403,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
 
               <div className="lg:hidden">
-                <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} transition={{ type: "tween", duration: 0.12 }}>
+                <motion.div
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "tween", duration: 0.12 }}
+                >
                   <Button
                     variant="secondary"
                     onClick={() => setMobileOpen((v) => !v)}
@@ -518,127 +569,98 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   {themeKey === "sakura" ? "Miku Assistant 🌸" : "Assistant"}
                 </span>
 
-                <motion.button
-                  type="button"
+                <button
                   onClick={() => setAssistantOpen(false)}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.92 }}
-                  className="rounded-xl p-2"
-                  style={{ color: "var(--hc-text)" }}
+                  className="rounded-full p-1 transition"
+                  style={{ color: "var(--hc-muted)" }}
                 >
                   <X className="h-4 w-4" />
-                </motion.button>
+                </button>
               </div>
 
               <div
                 ref={assistantScrollerRef}
-                className="max-h-[300px] space-y-2 overflow-y-auto px-3 py-3"
+                className="max-h-[420px] overflow-y-auto px-4 py-4 space-y-3"
               >
-                {assistantMsgs.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
+                {assistantMsgs.map((m, i) => {
+                  const isBot = m.role === "bot";
+                  return (
                     <div
-                      className="max-w-[80%] rounded-2xl border px-3 py-2 text-sm whitespace-pre-wrap"
-                      style={{
-                        borderColor: "var(--hc-border)",
-                        background: m.role === "user" ? "var(--hc-accent)" : "var(--hc-surface)",
-                        color: m.role === "user" ? "#fff" : "var(--hc-text)",
-                      }}
+                      key={i}
+                      className={`flex ${isBot ? "justify-start" : "justify-end"}`}
                     >
-                      {m.text}
+                      <div
+                        className="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap"
+                        style={{
+                          background: isBot ? "rgba(100,116,139,0.08)" : "var(--hc-accent)",
+                          color: isBot ? "var(--hc-text)" : "#fff",
+                        }}
+                      >
+                        {m.text}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {assistantLoading && (
                   <div className="flex justify-start">
-                    {themeKey === "sakura" ? (
-                      <div
-                        className="px-3 py-3 text-sm"
-                        style={{
-                          color: "var(--hc-text)",
-                          maxWidth: "80%",
-                        }}
-                      >
-                        <div className="flex items-center gap-2" style={{ color: "var(--hc-muted)" }}>
-                          <span>Miku is thinking...</span>
-                        </div>
-
-                        <div className="mt-2 flex justify-start">
-                          <motion.img
-                            src="/MikuMagicalCure.png"
-                            alt="Miku thinking"
-                            className="h-24 w-auto object-contain pointer-events-none select-none"
-                            animate={{ y: [0, -6, 0], rotate: [0, -1, 1, 0] }}
-                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className="rounded-2xl border px-3 py-2 text-sm"
-                        style={{
-                          borderColor: "var(--hc-border)",
-                          background: "var(--hc-surface)",
-                          color: "var(--hc-muted)",
-                        }}
-                      >
-                        Typing...
-                      </div>
-                    )}
+                    <div
+                      className="max-w-[85%] rounded-2xl px-3 py-2 text-sm"
+                      style={{
+                        background: "rgba(100,116,139,0.08)",
+                        color: "var(--hc-text)",
+                      }}
+                    >
+                      Thinking...
+                    </div>
                   </div>
                 )}
               </div>
 
               <div
-                className="flex gap-2 p-3"
-                style={{ borderTop: "1px solid var(--hc-border)" }}
+                className="border-t px-3 py-3"
+                style={{ borderColor: "var(--hc-border)" }}
               >
-                <input
-                  value={assistantDraft}
-                  onChange={(e) => setAssistantDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") sendAssistantMessage();
-                  }}
-                  placeholder="Ask the assistant..."
-                  className="w-full rounded-xl border px-3 py-2 text-sm"
-                  style={{
-                    borderColor: "var(--hc-border)",
-                    background: "transparent",
-                    color: "var(--hc-text)",
-                  }}
-                />
-
-                <motion.button
-                  type="button"
-                  onClick={() => sendAssistantMessage()}
-                  whileHover={{ y: -1, scale: 1.03 }}
-                  whileTap={{ scale: 0.94 }}
-                  className="grid min-w-[56px] place-items-center rounded-xl px-3"
-                  style={{ background: "var(--hc-accent)", color: "#fff" }}
-                >
-                  <SendHorizonal className="h-4 w-4" />
-                </motion.button>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={assistantDraft}
+                    onChange={(e) => setAssistantDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") sendAssistantMessage();
+                    }}
+                    placeholder="Ask something..."
+                    className="flex-1 rounded-2xl border px-3 py-2 text-sm outline-none"
+                    style={{
+                      borderColor: "var(--hc-border)",
+                      background: "transparent",
+                      color: "var(--hc-text)",
+                    }}
+                  />
+                  <Button
+                    variant="primary"
+                    onClick={() => sendAssistantMessage()}
+                    iconLeft={<SendHorizonal className="h-4 w-4" />}
+                  >
+                    Send
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         <motion.button
-          type="button"
           onClick={() => setAssistantOpen((v) => !v)}
-          whileHover={{ y: -2, scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ duration: 0.12, ease: "easeOut" }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           className="grid h-14 w-14 place-items-center rounded-full shadow-lg"
           style={{
             background: "var(--hc-accent)",
             color: "#fff",
           }}
+          aria-label="Open assistant"
         >
-          <MessageCircle className="h-6 w-6" />
+          {assistantOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
         </motion.button>
       </div>
     </div>
